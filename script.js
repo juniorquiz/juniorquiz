@@ -1,4 +1,4 @@
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxwmIlZgRNLXpmot2G8ENAa626EBYJWBokNPgVZsU-_8JdOEARUobcKaK1NSo8sqg6vfg/exec";
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyXO9_mJNI-5UL_eBLoVahYXMG3asmUK-TkpWgANnmlnSupOFRQ4D3pABrr_rtXXmDzvQ/exec";
 
 // ================= INDEX PAGE LOGIN LOGIC =================
 function startQuiz() {

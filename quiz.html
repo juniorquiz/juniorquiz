@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Junior Quiz Live</title>
+
+<style>
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: url("background.jpg") no-repeat center center fixed;
+    background-size: cover;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.container {
+    background: rgba(255,255,255,0.95);
+    padding: 25px;
+    border-radius: 10px;
+    width: 90%;
+    max-width: 500px;
+    text-align: center;
+}
+
+.title {
+    background: linear-gradient(90deg, #ff0000, #ff9900, #33cc33, #0066ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-size: 28px;
+    margin-bottom: 15px;
+}
+
+#counter {
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+#timer {
+    font-weight: bold;
+    margin-bottom: 10px;
+    color: red;
+}
+
+#question {
+    font-size: 18px;
+    margin-bottom: 15px;
+}
+
+.option {
+    display: block;
+    margin: 8px 0;
+    padding: 10px;
+    background: #f1f1f1;
+    border: none;
+    cursor: pointer;
+    width: 100%;
+}
+
+.option:hover {
+    background: #ddd;
+}
+.final-message {
+    text-align: center;
+    padding: 40px;
+    font-family: Arial, sans-serif;
+    color: #ffffff; /* white font */
+    background: rgba(0, 0, 0, 0.7); /* semi-transparent dark background */
+    border-radius: 15px;
+    max-width: 500px;
+    margin: 50px auto;
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+}
+
+.final-message h2 {
+    font-size: 28px;
+    margin-bottom: 15px;
+    color: #ffdd57; /* optional gold accent */
+}
+
+.final-message p {
+    font-size: 18px;
+    line-height: 1.5;
+    margin: 10px 0;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h2 class="title">Junior Quiz Live</h2>
+
+    <div id="counter">Question 1/1</div>
+    <div id="timer">Time: 15</div>
+
+    <div id="question">Loading...</div>
+    <div id="options"></div>
+
+</div>
+
+
+<script src="questions.js"></script>
+<script src="script.js"></script>
+
+<script>
+// Start quiz page only if quiz.html is open
+startQuizPage();
+</script>
+
+</body>
+</html>

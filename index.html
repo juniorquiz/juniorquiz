@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Junior Quiz Login</title>
+
+<style>
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: url("background.jpg") no-repeat center center fixed;
+    background-size: cover;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.container {
+    background: rgba(255,255,255,0.9);
+    padding: 25px;
+    border-radius: 10px;
+    text-align: center;
+    width: 300px;
+}
+
+input {
+    width: 90%;
+    padding: 10px;
+    margin: 8px 0;
+    font-size: 16px;
+}
+
+button {
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+#message {
+    margin-top: 10px;
+    font-weight: bold;
+    color: red;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+    <h2>Junior Quiz Login</h2>
+
+    <input type="email" id="email" placeholder="Enter Email" required>
+    <input type="text" id="code" placeholder="Participant Code" required>
+
+    <button onclick="startQuiz()">Start Quiz</button>
+
+    <div id="message"></div>
+</div>
+
+<script src="script.js"></script>
+
+</body>
+</html>

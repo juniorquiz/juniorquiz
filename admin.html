@@ -1,0 +1,1435 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Junior Quiz Live - Admin</title>
+
+<style>
+body{
+  margin:0;
+  font-family:Arial;
+  background:#010811;
+  color:white;
+  height:100vh;
+  display:flex;
+  justify-content:center;
+align-items:center;
+}
+
+.dashboard{
+width:98vw;
+height:95vh;
+display:flex;
+flex-direction:column;
+border:2px solid #00f2ff;
+border-radius:12px;
+}
+
+header{
+display:flex;
+  justify-content:space-between;
+padding:15px 30px;
+background:#020b18;
+border-bottom:2px solid #00f2ff;
+}
+
+.counter{
+color:#00f2ff;
+  font-weight:bold;
+}
+
+.main{
+flex:1;
+display:grid;
+grid-template-columns:320px 1fr 340px;
+gap:10px;
+  padding:10px;
+}
+
+.panel{
+background:#081829;
+border-radius:10px;
+display:flex;
+flex-direction:column;
+overflow:hidden;
+}
+
+.panel-header{
+padding:10px;
+text-align:center;
+background:#0e2948;
+color:#00f2ff;
+font-weight:bold;
+}
+
+.players{
+flex:1;
+overflow-y:auto;
+padding:10px;
+}
+
+.player{
+display:flex;
+align-items:center;
+padding:12px 16px; /* Increased spacing inside the card */
+margin-bottom:10px;
+margin-top:10px;
+background:rgba(25, 5, 46, 0.942);
+border-radius:6px;
+font-size: 15px; /* Slightly larger text for name */
+}
+
+.dot{
+width:12px;
+height:12px;
+border-radius:50%;
+margin-right:15px; /* More space between the green dot and the Name */
+}
+
+.playing{background:#00ff88;}
+.finished{background:#ff3333;}
+
+.score{
+margin-left:auto;
+color:#00f2ff;
+font-family:monospace;
+font-size: 18px; /* Bigger score number */
+font-weight: bold;
+padding-left: 30px; /* Buffer space between Name and Score */
+}
+
+/* Floating Admin Chat Widget */
+.admin-chat-widget {
+  position: fixed;
+  bottom: 0;
+  right: 20px;
+  width: 300px;
+  background: #081829;
+  border: 2px solid #00f2ff;
+  border-bottom: none;
+  border-radius: 10px 10px 0 0;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 0 15px rgba(0,0,0,0.5);
+}
+
+.admin-chat-header {
+  padding: 10px;
+  background: #00f2ff;
+  color: #000;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.admin-chat-content {
+  display: none; /* Hidden by default */
+  flex-direction: column;
+  height: 350px;
+}
+
+.chat-box {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+  display: flex;
+  flex-direction: column-reverse;
+  background: rgba(0,0,0,0.3);
+}
+
+.chat-message { padding: 4px 0; border-bottom: 1px solid #333; font-size: 13px; word-wrap: break-word; }
+.chat-message strong { color: #00f2ff; }
+
+.stage{
+display:flex;
+justify-content:center;
+align-items:center;
+font-size:40px;
+font-weight:bold;
+background:linear-gradient(45deg,#ff0077,#ffcc00,#00ffee,#0066ff);
+background-size:400%;
+animation:glow 6s infinite;
+}
+
+@keyframes glow{
+0%{background-position:0%}
+50%{background-position:100%}
+100%{background-position:0%}
+}
+
+.rank-card{
+height:80px;
+  margin:8px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  background-size:contain;
+  background-repeat:no-repeat;
+  background-position:center;
+  font-weight:bold;
+  /* --- POSITIONING TEXT --- */
+  box-sizing: border-box; /* Keeps size fixed when adding padding */
+  padding-top: 20px;       /* Increase to move text DOWN */
+  padding-bottom: 0px;    /* Increase to move text UP */
+  padding-left: 60px;      /* Increase to move text RIGHT */
+  padding-right: 0px;     /* Increase to move text LEFT */
+}
+
+button{
+  padding:10px;
+  margin:5px;
+  border:none;
+  border-radius:4px;
+  font-weight:bold;
+  cursor:pointer;
+}
+
+.end{background:#d63031;color:white}
+.resetquiz{background:#ff9800;color:white}
+.result{background:#0984e3;color:white}
+.download{background:#6c5ce7;color:white}
+.control-main{background:#6c5ce7;color:white; margin-top:20px; font-size: 16px; padding: 15px;}
+
+.overlay{
+position:fixed;
+top:0;
+right:0;
+width:50%;
+height:100%;
+background:#000c;
+display:none;
+justify-content:center;
+align-items:center;
+}
+
+.overlay-box{
+background:#081829;
+width:90%;
+height:90%;
+border-radius:10px;
+display:flex;
+flex-direction:column;
+padding:10px;
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+}
+
+ th,td{
+  border:1px solid #00f2ff44;
+  padding:6px;
+}
+ .closeOverlay{
+  position:absolute;
+  top:10px;
+  right:10px;
+  background:#d63031;
+  color:white;
+  border:none;
+  border-radius:50%;
+  width:30px;
+  height:30px;
+  font-weight:bold;
+  cursor:pointer;
+}
+
+ .sound-board {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding: 10px;
+    background: #020b18;
+    border-top: 2px solid #00f2ff;
+    flex-shrink: 0; /* Prevents the board from disappearing */
+}
+
+.sound-btn {
+    background: #0984e3;
+    color: white;
+}
+.sound-btn:hover {
+  background: #00cec9;
+}
+
+.sound-group {
+  display: flex;
+  gap: 8px;
+}
+
+.rank-name {
+  font-size: 16px; /* Default name size */
+  margin-bottom: 8px; /* GAP between Name and Score */
+}
+
+.rank-score {
+  font-size: 20px; /* Default score size */
+  color: #00f2ff;
+  /* margin-top: 0px; */
+}
+
+/* CSS MARQUEE */
+.marquee-container {
+  background-color: red; color: white; padding: 5px; font-weight: bold;
+  overflow: hidden; white-space: nowrap;
+}
+.marquee-content {
+  display: inline-block;
+  animation: marquee-scroll 15s linear infinite;
+  padding-left: 100%; /* Start from right */
+}
+@keyframes marquee-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-100%); }
+}
+</style>
+</head>
+
+<body>
+
+<div class="dashboard" style="display:none;">
+
+<header>
+<div>ADMIN DASHBOARD</div>
+<div class="counter" id="counter">PARTICIPANTS 0 / 100</div>
+</header>
+
+<div class="marquee-container">
+  <div class="marquee-content">Thank you for watching live. If you want to participate in Junior Quiz Live, please subscribe to our channel and follow up for our next session.</div>
+</div>
+
+<div class="main">
+
+<!-- LIVE PLAYERS -->
+<div class="panel">
+<div class="panel-header">Live Players</div>
+<div class="players" id="playerList"></div>
+<div style="padding: 8px; border-top: 1px solid #333; margin-top: 8px;">
+    <div class="panel-header" style="margin: -8px -8px 8px -8px;">Advanced Controls</div>
+    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; justify-content: center;">
+        <label>Participant Limit:</label>
+        <input type="number" id="participantLimitInput" placeholder="100" style="width: 60px; padding: 5px;">
+        <button onclick="saveParticipantLimit()" style="padding: 5px 8px; font-size: 12px; background: #0984e3; color: white;">Save</button>
+    </div>
+    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; justify-content: center;">
+        <label>Time Per Q (sec):</label>
+        <input type="number" id="questionTimeInput" placeholder="15" style="width: 60px; padding: 5px;">
+        <button onclick="saveQuestionTime()" style="padding: 5px 8px; font-size: 12px; background: #0984e3; color: white;">Save</button>
+    </div>
+</div>
+</div>
+
+<!-- CENTER -->
+<div class="panel stage" style="flex-direction:column; gap:10px;">
+  <img src="logo.png" style="width:250px; height:auto; filter:drop-shadow(0 0 10px #000);">
+  <div id="adminTimer" style="font-size:60px; font-family:monospace; text-shadow:2px 2px 4px #000;">02:00:00</div>
+  
+  <!-- YOUTUBE LIVE SESSION BLACKBOARD -->
+  <div style="
+      width: 90%;
+      height: 300px;
+      background: url('blackboard.jpg') no-repeat center center;
+      background-size: cover;
+      border: 8px solid #5d4037; /* Wood frame */
+      border-radius: 6px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.6);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Chalkduster', 'Comic Sans MS', sans-serif;
+      color: white;
+      text-align: center;
+      position: relative;
+      margin-bottom: 10px;
+  ">
+      <!-- 1. Timer at Top -->
+      <div id="bbTimer" style="
+          margin-top: 10px;
+          margin-bottom: 10px;
+          font-size: 32px;
+          width: 50px; height: 50px;
+          border: 3px solid rgba(255,255,255,0.7);
+          border-radius: 50%;
+          display: flex; justify-content: center; align-items: center;
+          box-shadow: 0 0 5px rgba(255,255,255,0.2);
+      ">15</div>
+      
+      <!-- 2. Question -->
+      <div id="bbQuestion" style="font-size: 22px; padding: 0 15px; text-shadow: 1px 1px 2px black; min-height:50px; display:flex; align-items:center;">
+          YouTube Live Session<br>Click Next to Start
+      </div>
+
+      <!-- 3. Options -->
+      <div id="bbOptions" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 100%; padding: 10px 40px; box-sizing: border-box; font-size: 18px; text-align: center; margin-bottom:auto;"></div>
+
+      <!-- 4. Answer (Bottom) -->
+      <div id="bbAnswer" style="margin-bottom: 30px; font-size: 26px; color: #ffeb3b; visibility: hidden; text-shadow: 1px 1px 2px black;">
+          Answer Here
+      </div>
+
+      <div id="ytControls" style="position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);">
+          <button id="ytStartBtn" onclick="toggleYTSession(true)" style="padding: 8px 15px; background: #00ff88; color: black; border-radius: 5px;">Start Live Session</button>
+          <button id="ytStopBtn" onclick="toggleYTSession(false)" style="padding: 8px 15px; background: #d63031; color: white; border-radius: 5px; display: none;">Stop Live Session</button>
+      </div>
+  </div>
+
+  <div class="sound-board" style="margin-top: auto; background: transparent; border-top: none; padding: 15px;">
+    <div class="sound-group">
+      <button onclick="playCustomSound(1)" class="sound-btn">🔊 Custom 1</button>
+      <button onclick="playCustomSound(2)" class="sound-btn">🔊 Custom 2</button>
+      <button onclick="playPreset('cheer')" class="sound-btn">🎉 Cheering</button>
+      <button onclick="playPreset('clap')" class="sound-btn">👏 Clapping</button>
+      <button onclick="playPreset('tension')" class="sound-btn">🤔 Tension</button>
+      <button onclick="stopAllSounds()" style="background:#d63031; color:white;">🛑 Stop</button>
+    </div>
+</div>
+</div>
+
+<!-- RIGHT PANEL -->
+<div class="panel">
+
+<div class="panel-header">TOP 3</div>
+
+<div class="rank-card" id="rank1" style="background-image:url('Rank1.png')"></div>
+<div class="rank-card" id="rank2" style="background-image:url('Rank2.png')"></div>
+<div class="rank-card" id="rank3" style="background-image:url('Rank3.png')"></div>
+
+<div style="padding:5px; display:flex; justify-content:center; gap:5px;">
+  <button onclick="startAdminTimer()" style="background:#00ff88; color:black; font-size:12px; padding:5px; flex:1;">Start Time</button>
+  <button onclick="resetAdminTimer()" style="background:#ff3333; color:white; font-size:12px; padding:5px; flex:1;">Reset Time</button>
+</div>
+
+<button class="result" onclick="showResults()">Result</button>
+<button class="control-main" onclick="openControlPanel()">⚙️ Control Panel</button>
+
+</div>
+
+</div>
+</div>
+
+<!-- RESULTS OVERLAY -->
+
+<div class="overlay" id="overlay">
+
+<div class="overlay-box">
+  
+    <!-- X Button to close overlay -->
+    <button class="closeOverlay">X</button>
+
+<h2 id="resultTitle">Top Results</h2>
+
+<div style="margin-bottom:10px;">
+  <label>Show Top:</label>
+  <input type="number" id="resLimitInput" value="100" style="width:60px; padding:5px; color:black;">
+  <button onclick="showResults()" style="background:#0984e3; color:white; padding:5px 10px; border:none; border-radius:4px; cursor:pointer;">Update</button>
+</div>
+
+<table id="resultTable">
+<thead>
+<tr>
+<th>Rank</th>
+<th>Name</th>
+<th>Score</th>
+<th>Time (s)</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+
+<button class="download" onclick="downloadCSV()">Download CSV</button>
+
+</div>
+  </div>
+
+  <!-- CONTROL PANEL OVERLAY -->
+  <div class="overlay" id="controlOverlay">
+    <div class="overlay-box" style="width: 350px; height: auto; align-items: stretch;">
+      <button class="closeOverlay">X</button>
+      <h2 style="text-align:center; color:#00f2ff;">Control Panel</h2>
+      
+      <button class="end" onclick="endQuiz()">🛑 End Quiz</button>
+      <button class="resetquiz" onclick="resetQuiz()">🔄 Reset Quiz Scores</button>
+      <button onclick="setQuizTime()">📅 Set Quiz Date & Time</button>
+      <button onclick="manageRules()">📜 Manage Rules</button>
+      <button onclick="manageQuestions()">❓ Manage Questions</button>
+      
+      <button style="background:#d63031; color:white; margin-top:20px; border:2px solid white;" onclick="clearAllRegistrations()">🔥 Hard Reset: Delete All Registrations</button>
+
+      <div style="margin-top:15px; border-top:1px solid #333; padding-top:10px;">
+        <label style="color:#f39c12; font-weight:bold;">Round Promotion</label>
+        <input type="number" id="promoteCountInput" placeholder="Enter Promote Count (e.g. 70)" style="width:95%; padding:8px; margin:5px 0;">
+        <button onclick="promoteTopPlayers()" style="background:#f39c12; color:white;">Promote & Block Rest</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RULES OVERLAY -->
+<div class="overlay" id="rulesOverlay">
+  <div class="overlay-box">
+    <!-- X Button to close overlay -->
+    <button class="closeOverlay">X</button>
+    <h2>Manage Rules</h2>
+    <textarea id="newRule" style="width:100%; height:100px; margin-bottom:10px;" placeholder="Enter all rules here..."></textarea>
+    <button id="saveRulesBtn">Save Rules</button>
+    <div id="rulesList" style="margin-top:10px; overflow-y:auto; max-height:300px;"></div>
+  </div>
+</div>
+
+<!-- QUESTIONS OVERLAY -->
+<div class="overlay" id="questionsOverlay">
+  <div class="overlay-box" style="overflow-y:auto;">
+    <button class="closeOverlay" style="position:sticky; top:0; left:100%;">X</button>
+    
+    <h2>Manage Questions</h2>
+    
+    <!-- Add Question Form -->
+    <div style="background:rgba(255,255,255,0.05); padding:15px; border-radius:10px; margin-bottom:20px;">
+      <input type="text" id="qInput" placeholder="Enter Question Text" style="width:95%; padding:10px; margin-bottom:10px; border-radius:5px; border:none;">
+      
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
+        <input type="text" id="opt1" placeholder="Option 1" style="padding:8px; border-radius:4px; border:none;">
+        <input type="text" id="opt2" placeholder="Option 2" style="padding:8px; border-radius:4px; border:none;">
+        <input type="text" id="opt3" placeholder="Option 3" style="padding:8px; border-radius:4px; border:none;">
+        <input type="text" id="opt4" placeholder="Option 4" style="padding:8px; border-radius:4px; border:none;">
+      </div>
+
+      <label style="color:#00f2ff;">Correct Answer: </label>
+      <select id="correctSelect" style="padding:8px; border-radius:4px; margin-right:10px;">
+        <option value="0">Option 1</option>
+        <option value="1">Option 2</option>
+        <option value="2">Option 3</option>
+        <option value="3">Option 4</option>
+      </select>
+
+      <button id="addQuestionBtn" style="background:#00ff88; color:black;">+ Add Question</button>
+    </div>
+
+    <!-- Bulk Upload Form -->
+    <div style="background:rgba(255,255,255,0.05); padding:15px; border-radius:10px; margin-bottom:20px;">
+      <h3 style="margin-top:0;">Bulk Upload (JSON)</h3>
+      <p style="font-size:12px; color:#ccc; margin-bottom:5px;">Paste a JSON array. Example: <code>[{"q":"2+2?","o":["1","2","3","4"],"a":"4"}]</code></p>
+      <textarea id="bulkInput" placeholder="Paste JSON here..." style="width:95%; height:80px; padding:10px; margin-bottom:10px; border-radius:5px; border:none;"></textarea>
+      <button id="bulkAddBtn" style="background:#6c5ce7; color:white;">+ Upload Bulk</button>
+    </div>
+
+    <h3>Existing Questions (<span id="qCount">0</span>)</h3>
+    <button id="deleteSelectedBtn" style="background:#d63031; color:white; padding:8px; border:none; border-radius:4px; margin-bottom:10px; cursor:pointer; display:none;">Delete Selected</button>
+    <div id="questionsList" style="display:flex; flex-direction:column; gap:10px;">Loading...</div>
+  </div>
+</div>
+  
+<!-- Floating Chat Widget -->
+<div class="admin-chat-widget">
+  <div class="admin-chat-header" onclick="toggleChat()">
+    <span>💬 Live Chat</span>
+    <span id="chatToggleIcon">▲</span>
+  </div>
+  <div class="admin-chat-content" id="adminChatContent">
+    <div class="chat-box" id="chatBox"></div>
+    <div style="display:flex; padding:5px; border-top:1px solid #333; background:#020b18;">
+      <input type="text" id="adminChatInput" placeholder="Reply..." style="flex:1; padding:5px;" onkeypress="handleChatKey(event)">
+      <button onclick="sendAdminMessage()" style="margin:0 0 0 5px; padding:5px 10px; background:#00f2ff; color:black;">Send</button>
+    </div>
+  </div>
+</div>
+  
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
+import { getFirestore, collection, onSnapshot, query, orderBy, limit, doc, updateDoc, getDocs, deleteDoc, setDoc, addDoc, getDoc, where, writeBatch, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+
+const firebaseConfig = {
+apiKey: "AIzaSyC8LBv9zIEhGgFS-6rVaUelg1RzkQrJI4M",
+authDomain: "junior-quiz-abef8.firebaseapp.com",
+projectId: "junior-quiz-abef8",
+storageBucket: "junior-quiz-abef8.firebasestorage.app",
+messagingSenderId: "1027701484784",
+appId: "1:1027701484784:web:8e5075d60d042c47d0a635"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// Global state for counter
+let livePlayerCount = 0;
+let maxParticipantLimit = 100;
+
+function updateCounterDisplay() {
+    document.getElementById("counter").innerText = `PARTICIPANTS ${livePlayerCount} / ${maxParticipantLimit}`;
+}
+
+// Listen for settings changes (like participant limit)
+onSnapshot(doc(db, "settings", "quiz"), (docSnap) => {
+    if (docSnap.exists()) {
+        const data = docSnap.data();
+        if (data.participantLimit) {
+            maxParticipantLimit = data.participantLimit;
+            document.getElementById('participantLimitInput').value = maxParticipantLimit;
+        }
+        if (data.questionTime) {
+            document.getElementById('questionTimeInput').value = data.questionTime;
+        }
+    } else {
+        maxParticipantLimit = 100; // Fallback to default
+    }
+    updateCounterDisplay(); // Update display when limit changes
+});
+
+
+/* LIVE PLAYER LIST & COUNTER */
+onSnapshot(collection(db, "liveQuiz"), (snapshot) => {
+  const list = document.getElementById("playerList");
+  list.innerHTML = "";
+  let players = [];
+  
+  snapshot.forEach(doc => {
+    const p = doc.data();
+    players.push(p);
+    const div = document.createElement("div");
+    div.className = "player";
+    let statusClass = p.status === "finished" ? "finished" : "playing";
+    div.innerHTML = `<div class="dot ${statusClass}"></div>${p.name}<span class="score">${p.score || 0}</span>`;
+    list.appendChild(div);
+  });
+
+  livePlayerCount = snapshot.size;
+  updateCounterDisplay();
+
+  // Update Top 3
+  players.sort((a, b) => (b.score || 0) - (a.score || 0));
+  if(players[0]) document.getElementById("rank1").innerHTML = `<span class="rank-name">${players[0].name}</span><span class="rank-score">${players[0].score || 0}</span>`;
+  if(players[1]) document.getElementById("rank2").innerHTML = `<span class="rank-name">${players[1].name}</span><span class="rank-score">${players[1].score || 0}</span>`;
+  if(players[2]) document.getElementById("rank3").innerHTML = `<span class="rank-name">${players[2].name}</span><span class="rank-score">${players[2].score || 0}</span>`;
+});
+
+/* LIVE CHAT LISTENER */
+const chatBox = document.getElementById("chatBox");
+const qChat = query(collection(db, "chat"), orderBy("timestamp", "desc"), limit(50));
+onSnapshot(qChat, (snapshot) => {
+    chatBox.innerHTML = ""; // Clear on new snapshot
+    snapshot.forEach(doc => {
+        const msg = doc.data();
+        const div = document.createElement("div");
+        div.className = "chat-message";
+        // Sanitize text to prevent HTML injection
+        const textNode = document.createTextNode(msg.text);
+        div.innerHTML = `<strong>${msg.name || 'User'}:</strong> `;
+        div.appendChild(textNode);
+        chatBox.appendChild(div);
+    });
+});
+
+/* END QUIZ */
+window.endQuiz = async function(){
+  if(confirm("Are you sure you want to forcibly END the quiz for everyone?")){
+    try {
+      await setDoc(doc(db, "settings", "quiz"), { status: "ended" }, { merge: true });
+      alert("Quiz ended command sent to all players.");
+    } catch(e) {
+      console.error(e);
+      alert("Error ending quiz");
+    }
+  }
+}
+
+/* RESET QUIZ */
+window.resetQuiz = async function(){
+  if(confirm("Reset quiz for all players? This clears scores and allows playing again.")){
+    try {
+      // 1. Reset Admin Status so players can join again
+      // Also clear startTime so users aren't blocked by "Quiz Ended" if previous time expired
+      await setDoc(doc(db, "settings", "quiz"), { status: "playing", startTime: null, currentRound: 1 }, { merge: true });
+
+      // 2. Clear Live Board
+      const liveDeletes = [];
+      const liveSnap = await getDocs(collection(db, "liveQuiz"));
+      liveSnap.forEach((d) => liveDeletes.push(deleteDoc(d.ref)));
+      await Promise.all(liveDeletes);
+
+      // 3. Reset Participants Data
+      const userUpdates = [];
+      const usersSnap = await getDocs(collection(db, "participants"));
+      usersSnap.forEach((d) => userUpdates.push(updateDoc(d.ref, { score:0, quizFinished:false, quizTimeTaken:0, currentRound: 1 })));
+      await Promise.all(userUpdates);
+
+      alert("Quiz reset successfully");
+    } catch(e) {
+      console.error(e);
+      alert("Error resetting quiz");
+    }
+  }
+}
+
+/* HARD RESET: DELETE ALL PARTICIPANTS AND DATA */
+window.clearAllRegistrations = async function() {
+    const warning = "DANGER: This will delete ALL registered players, clear the count back to 0, and wipe all chat/live data. This cannot be undone.\n\nType 'RESET' to confirm:";
+    const confirmation = prompt(warning);
+    
+    if (confirmation !== "RESET") {
+        alert("Reset cancelled. You must type 'RESET' exactly.");
+        return;
+    }
+
+    try {
+        const collectionsToClear = ["participants", "liveQuiz", "liveLogins", "chat"];
+        for (const colName of collectionsToClear) {
+            const snap = await getDocs(collection(db, colName));
+            const batch = writeBatch(db);
+            snap.forEach(d => batch.delete(d.ref));
+            await batch.commit();
+        }
+        alert("All data wiped. Registration count is now 0.");
+        location.reload();
+    } catch (e) {
+        console.error("Reset Error:", e);
+        alert("Error during reset: " + e.message);
+    }
+}
+
+/* SHOW RESULTS */
+window.showResults = async function(){
+  document.getElementById("overlay").style.display="flex";
+
+  const limitInput = document.getElementById('resLimitInput');
+  let limitValue = (limitInput && limitInput.value) ? Number(limitInput.value) : 100;
+  
+  if (isNaN(limitValue) || limitValue <= 0) {
+      limitValue = 100; // fallback
+  }
+
+  // Update the overlay title dynamically
+  document.getElementById("resultTitle").innerText = `Top ${limitValue} Players`;
+
+  try {
+    // Fetch ALL participants and sort in JS to avoid needing a composite index in Firestore
+    const snapshot = await getDocs(collection(db, "participants"));
+    let players = [];
+    snapshot.forEach(doc => players.push(doc.data()));
+
+    // Sort: High Score first, then Low TimeTaken
+    players.sort((a,b) => {
+      let scoreA = a.score || 0;
+      let scoreB = b.score || 0;
+      let timeA = a.quizTimeTaken || 999999;
+      let timeB = b.quizTimeTaken || 999999;
+
+      if(scoreB !== scoreA) return scoreB - scoreA;
+      return timeA - timeB;
+    });
+
+    // Slice to the dynamic limit
+    const topPlayers = players.slice(0, limitValue);
+
+    const tbody = document.querySelector("#resultTable tbody");
+    tbody.innerHTML = "";
+    
+    let rank = 1;
+    topPlayers.forEach(p => {
+      const tr = document.createElement("tr");
+      const timeStr = p.quizTimeTaken ? p.quizTimeTaken + "s" : "N/A";
+      tr.innerHTML = `<td>${rank++}</td><td>${p.name || 'N/A'}</td><td>${p.score || 0}</td><td>${timeStr}</td>`;
+      tbody.appendChild(tr);
+    });
+  } catch(e) {
+    console.error("Error showing results:", e);
+    alert("Error loading results. Check console.");
+  }
+}
+
+/* CSV DOWNLOAD */
+window.downloadCSV = function(){
+  let rows=document.querySelectorAll("#resultTable tr");
+  let csv="";
+  rows.forEach(r=>{
+    let cols=r.querySelectorAll("td,th");
+    let row=[];
+    cols.forEach(c=>row.push(c.innerText));
+    csv+=row.join(",")+"\n";
+  });
+  let blob=new Blob([csv]);
+  let a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="Top70Players.csv";
+  a.click();
+}
+
+/* PARTICIPANT & ROUND MANAGEMENT */
+window.saveParticipantLimit = async function() {
+    const limit = document.getElementById('participantLimitInput').value;
+    if (limit && !isNaN(limit) && Number(limit) > 0) {
+        await setDoc(doc(db, "settings", "quiz"), { participantLimit: Number(limit) }, { merge: true });
+        alert(`Participant limit set to ${limit}`);
+    } else {
+        alert("Please enter a valid number.");
+    }
+}
+
+window.saveQuestionTime = async function() {
+    const limit = document.getElementById('questionTimeInput').value;
+    if (limit && !isNaN(limit) && Number(limit) > 0) {
+        await setDoc(doc(db, "settings", "quiz"), { questionTime: Number(limit) }, { merge: true });
+        alert(`Question time set to ${limit} seconds`);
+    } else {
+        alert("Please enter a valid number.");
+    }
+}
+
+window.promoteTopPlayers = async function() {
+    const qualifyLimit = document.getElementById('promoteCountInput').value;
+    if (!qualifyLimit || isNaN(qualifyLimit) || Number(qualifyLimit) <= 0) {
+        alert("Please enter number of players to PROMOTE.");
+        return;
+    }
+    const limit = Number(qualifyLimit);
+
+    try {
+        const settingsDoc = await getDoc(doc(db, "settings", "quiz"));
+        const currentRound = (settingsDoc.exists() && settingsDoc.data().currentRound) ? settingsDoc.data().currentRound : 1;
+        const nextRound = currentRound + 1;
+
+        if (!confirm(`This will END Round ${currentRound} and promote the top ${limit} players to Round ${nextRound}. All other players will be blocked. This cannot be undone. Proceed?`)) {
+            return;
+        }
+
+        const q = query(collection(db, "participants"), where("currentRound", "==", currentRound));
+        const snapshot = await getDocs(q);
+
+        let players = [];
+        snapshot.forEach(doc => players.push({ id: doc.id, ...doc.data() }));
+
+        if (players.length === 0) {
+            alert(`No players found in Round ${currentRound}.`);
+            return;
+        }
+
+        players.sort((a, b) => {
+            if ((b.score || 0) !== (a.score || 0)) {
+                return (b.score || 0) - (a.score || 0);
+            }
+            return (a.quizTimeTaken || 9999) - (b.quizTimeTaken || 9999);
+        });
+
+        const winners = players.slice(0, limit);
+        const batch = writeBatch(db);
+
+        winners.forEach(player => {
+            const playerRef = doc(db, "participants", player.id);
+            batch.update(playerRef, {
+                currentRound: nextRound,
+                quizFinished: false,
+                quizTimeTaken: 0,
+                score: 0
+            });
+        });
+
+        await batch.commit();
+        await setDoc(doc(db, "settings", "quiz"), { currentRound: nextRound }, { merge: true });
+
+        // Clear Live Board for the new round so the dashboard is clean
+        const liveSnapLive = await getDocs(collection(db, "liveQuiz"));
+        const liveDeletes = [];
+        liveSnapLive.forEach((d) => liveDeletes.push(deleteDoc(d.ref)));
+        await Promise.all(liveDeletes);
+
+        alert(`Promotion complete! ${winners.length} players have been promoted to Round ${nextRound}. Others will be blocked from logging in.`);
+    } catch (error) {
+        console.error("Error promoting players:", error);
+        alert("An error occurred during promotion. Check the console for details.");
+    }
+}
+
+/* CONTROL PANEL */
+window.openControlPanel = function() {
+  document.getElementById("controlOverlay").style.display = "flex";
+}
+
+/* SET QUIZ TIME */
+window.setQuizTime=function(){
+  let t=prompt("Enter Quiz Date & Time (YYYY-MM-DD HH:MM)");
+  if(t){
+    setDoc(doc(db, "settings", "quiz"), { startTime: t }, { merge: true });
+    alert("Quiz time saved");
+  }
+}
+  document.querySelectorAll(".closeOverlay").forEach(btn => {
+  btn.addEventListener("click", () => {
+    btn.closest(".overlay").style.display = "none";
+  });
+});
+
+// Open/close overlay
+window.manageRules = async function() {
+  document.getElementById("rulesOverlay").style.display = "flex";
+  try {
+    const docSnap = await getDoc(doc(db, "quizRules", "text"));
+    if(docSnap.exists()){
+      document.getElementById("newRule").value = docSnap.data().text || "";
+    }
+  } catch(e){
+    console.error("Error loading rules:", e);
+  }
+};
+
+// Save Rules
+document.getElementById("saveRulesBtn").addEventListener("click", async () => {
+  const text = document.getElementById("newRule").value;
+  await setDoc(doc(db, "quizRules", "text"), { text: text });
+  alert("Rules updated!");
+});
+
+/* MANAGE QUESTIONS */
+let questionsUnsub;
+
+window.manageQuestions = function(){ 
+  document.getElementById("questionsOverlay").style.display = "flex";
+
+  // Start listener only once
+  if(!questionsUnsub){
+    questionsUnsub = onSnapshot(collection(db, "questions"), (snap) => {
+      const list = document.getElementById("questionsList");
+      document.getElementById("qCount").innerText = snap.size;
+      
+      // Show/Hide Delete Selected Button
+      document.getElementById("deleteSelectedBtn").style.display = snap.size > 0 ? "inline-block" : "none";
+
+      list.innerHTML = "";
+      if (snap.size === 0) {
+        list.innerHTML = "<div style='padding:15px; color:#aaa; text-align:center;'>No questions found.<br>Click 'Load 50 GK Qs' or add one manually.</div>";
+      }
+      
+      snap.forEach(docSnap => {
+        const q = docSnap.data();
+        const div = document.createElement("div");
+        div.style.background = "rgba(0,0,0,0.3)";
+        div.style.padding = "10px";
+        div.style.borderRadius = "5px";
+        div.style.borderLeft = "4px solid #00f2ff";
+        div.style.display = "flex";
+        div.style.justifyContent = "space-between";
+        div.style.alignItems = "center";
+        
+        // Checkbox for bulk delete
+       const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.className = "q-checkbox";
+        checkbox.value = docSnap.id;
+        checkbox.style.marginRight = "15px";
+        checkbox.style.transform = "scale(1.5)";
+
+        div.innerHTML = `
+          <div style="flex:1;">
+            <div style="font-weight:bold; font-size:1.1em; margin-bottom:5px;">${q.q}</div>
+            <div style="font-size:0.9em; color:#ccc;">Ans: ${q.a}</div>
+          </div>
+        `;
+        
+        const delBtn = document.createElement("button");
+        delBtn.innerText = "Delete";
+        delBtn.style.background = "#d63031";
+        delBtn.style.color = "white";
+        delBtn.onclick = () => { if(confirm("Delete this question?")) deleteDoc(docSnap.ref); };
+        
+        div.prepend(checkbox);
+        div.appendChild(delBtn);
+        list.appendChild(div);
+      });
+    });
+  }
+}
+
+// Add New Question Logic
+document.getElementById("addQuestionBtn").addEventListener("click", async () => {
+  const qText = document.getElementById("qInput").value.trim();
+  const o1 = document.getElementById("opt1").value.trim();
+  const o2 = document.getElementById("opt2").value.trim();
+  const o3 = document.getElementById("opt3").value.trim();
+  const o4 = document.getElementById("opt4").value.trim();
+  const correctIdx = document.getElementById("correctSelect").value;
+
+  if(!qText || !o1 || !o2 || !o3 || !o4) {
+    alert("Please fill in the Question and all 4 Options.");
+    return;
+  }
+
+  const options = [o1, o2, o3, o4];
+  const correctAnswer = options[correctIdx]; // Get the actual text of the correct option
+
+  try {
+    await addDoc(collection(db, "questions"), {
+      q: qText,
+      o: options,
+      a: correctAnswer,
+      createdAt: new Date()
+    });
+    
+    alert("Question added successfully!");
+    
+    // Clear inputs
+    document.getElementById("qInput").value = "";
+    document.getElementById("opt1").value = "";
+    document.getElementById("opt2").value = "";
+    document.getElementById("opt3").value = "";
+    document.getElementById("opt4").value = "";
+    document.getElementById("correctSelect").value = "0";
+
+  } catch(e) {
+    console.error("Error adding question: ", e);
+    alert("Error adding question. See console.");
+  }
+});
+
+// Bulk Add Logic
+document.getElementById("bulkAddBtn").addEventListener("click", async () => {
+  const raw = document.getElementById("bulkInput").value.trim();
+  if(!raw) return alert("Please paste JSON data first.");
+
+  try {
+    const data = JSON.parse(raw);
+    if(!Array.isArray(data)) throw new Error("Data must be a JSON Array starting with [");
+
+    let count = 0;
+    const promises = data.map(async (item) => {
+      // Validate structure: q=Question, o=Options(Array), a=Answer(String)
+      if(item.q && Array.isArray(item.o) && item.o.length === 4 && item.a){
+        await addDoc(collection(db, "questions"), {
+            q: item.q,
+            o: item.o,
+            a: item.a, // Ensure this matches exactly one of the options string
+            createdAt: new Date()
+        });
+        count++;
+      }
+    });
+
+    await Promise.all(promises);
+    alert(`Successfully added ${count} questions!`);
+    document.getElementById("bulkInput").value = "";
+  } catch(e) {
+    console.error(e);
+    alert("Invalid JSON format. Check console for details.");
+  }
+});
+  
+/* BULK DELETE SELECTED */
+document.getElementById("deleteSelectedBtn").addEventListener("click", async () => {
+  const checkedBoxes = document.querySelectorAll(".q-checkbox:checked");
+  
+  if(checkedBoxes.length === 0) {
+    alert("Please select at least one question to delete.");
+    return;
+  }
+
+  if(!confirm(`Are you sure you want to delete ${checkedBoxes.length} selected questions?`)) return;
+  const promises = [];
+  checkedBoxes.forEach(box => {
+    promises.push(deleteDoc(doc(db, "questions", box.value)));
+  });
+
+  await Promise.all(promises);
+  alert("Selected questions deleted.");
+});
+
+/* LOCAL ADMIN TIMER (2 HOURS) */
+let adminTimerInterval = null;
+let adminTimeRemaining = 7200; // 2 hours
+
+window.updateAdminTimerUI = function() {
+  const h = Math.floor(adminTimeRemaining / 3600).toString().padStart(2, '0');
+  const m = Math.floor((adminTimeRemaining % 3600) / 60).toString().padStart(2, '0');
+  const s = (adminTimeRemaining % 60).toString().padStart(2, '0');
+  const el = document.getElementById("adminTimer");
+  if(el) el.innerText = `${h}:${m}:${s}`;
+}
+
+window.startAdminTimer = function() {
+  if(adminTimerInterval) return;
+  adminTimerInterval = setInterval(() => {
+    if(adminTimeRemaining > 0) {
+      adminTimeRemaining--;
+      updateAdminTimerUI();
+    } else {
+      clearInterval(adminTimerInterval);
+    }
+  }, 1000);
+}
+
+window.resetAdminTimer = function() {
+  clearInterval(adminTimerInterval);
+  adminTimerInterval = null;
+  adminTimeRemaining = 7200;
+  updateAdminTimerUI();
+}
+
+/* SOUND BOARD LOGIC */
+let soundboardSlots = {}; // Store all sound objects
+let currentPlayingAudio = null; // Track current audio to allow stopping
+
+// Helper to play sound and track it
+function playAudioFile(audioObj) {
+  if (currentPlayingAudio) {
+    currentPlayingAudio.pause();
+    currentPlayingAudio.currentTime = 0;
+  }
+  currentPlayingAudio = audioObj;
+  currentPlayingAudio.play().catch(e => {
+    console.error("Audio play error:", e);
+    alert("Error playing sound: " + e.message + "\nCheck internet or URL.");
+  });
+}
+
+window.stopAllSounds = function() {
+  if (currentPlayingAudio) {
+    currentPlayingAudio.pause();
+    currentPlayingAudio.currentTime = 0;
+    currentPlayingAudio = null;
+  }
+}
+
+function setAndPlaySound(soundId, promptMessage) {
+  const url = prompt(promptMessage + "\n(Please use a direct .mp3 link for best compatibility)");
+  if (url) {
+    const newAudio = new Audio(url);
+    soundboardSlots[soundId] = newAudio;
+    alert(`Sound for "${soundId}" has been set.`);
+    playAudioFile(newAudio);
+  }
+}
+
+window.playCustomSound = function(num) {
+  const soundId = 'Custom ' + num;
+  const audio = soundboardSlots[soundId];
+  if (audio) {
+    audio.currentTime = 0;
+    playAudioFile(audio);
+  } else {
+    setAndPlaySound(soundId, `Set URL for Custom Sound ${num}`);
+  }
+}
+
+window.playPreset = function(soundName) {
+  const audio = soundboardSlots[soundName];
+  if (audio) {
+    audio.currentTime = 0;
+    playAudioFile(audio);
+  } else {
+    setAndPlaySound(soundName, `Set URL for "${soundName}" sound`);
+  }
+}
+
+/* CHAT WIDGET LOGIC */
+window.toggleChat = function() {
+  const content = document.getElementById("adminChatContent");
+  const icon = document.getElementById("chatToggleIcon");
+  if (content.style.display === "flex") {
+    content.style.display = "none";
+    icon.innerText = "▲";
+  } else {
+    content.style.display = "flex";
+    icon.innerText = "▼";
+  }
+}
+
+window.sendAdminMessage = async function() {
+  const input = document.getElementById("adminChatInput");
+  const text = input.value.trim();
+  if(!text) return;
+  
+  try {
+    await addDoc(collection(db, "chat"), {
+      name: "ADMIN",
+      text: text,
+      timestamp: serverTimestamp()
+    });
+    input.value = "";
+  } catch(e) {
+    console.error("Error sending message:", e);
+  }
+}
+window.handleChatKey = function(e) {
+  if(e.key === "Enter") sendAdminMessage();
+}
+
+/* YOUTUBE LIVE BLACKBOARD LOGIC (Not connected to DB) */
+const ytQuestions = [
+  {q: "What is the capital of France?", o: ["Berlin", "Madrid", "Paris", "Rome"], a: "Paris"},
+  {q: "How many legs does a spider have?", o: ["6", "8", "10", "12"], a: "8"},
+  {q: "Chemical symbol for Water?", o: ["H2O", "CO2", "O2", "NaCl"], a: "H2O"},
+  {q: "Which is the Red Planet?", o: ["Venus", "Mars", "Jupiter", "Saturn"], a: "Mars"},
+  {q: "Who painted the Mona Lisa?", o: ["Van Gogh", "Picasso", "Da Vinci", "Rembrandt"], a: "Da Vinci"},
+  {q: "What is the largest mammal?", o: ["Elephant", "Blue Whale", "Giraffe", "Hippo"], a: "Blue Whale"},
+  {q: "How many days are in a leap year?", o: ["365", "366", "364", "360"], a: "366"},
+  {q: "Which gas do plants absorb?", o: ["Oxygen", "Carbon Dioxide", "Nitrogen", "Helium"], a: "Carbon Dioxide"},
+  {q: "Fastest land animal?", o: ["Lion", "Cheetah", "Horse", "Leopard"], a: "Cheetah"},
+  {q: "Capital of Japan?", o: ["Seoul", "Beijing", "Tokyo", "Bangkok"], a: "Tokyo"},
+  {q: "H2O is the formula for?", o: ["Salt", "Sugar", "Water", "Air"], a: "Water"},
+  {q: "Which planet has rings?", o: ["Mars", "Saturn", "Venus", "Mercury"], a: "Saturn"},
+  {q: "Opposite of 'Cold'?", o: ["Hot", "Warm", "Cool", "Freeze"], a: "Hot"},
+  {q: "Number of continents?", o: ["5", "6", "7", "8"], a: "7"},
+  {q: "King of the jungle?", o: ["Tiger", "Lion", "Bear", "Wolf"], a: "Lion"},
+  {q: "What gives skin color?", o: ["Melanin", "Keratin", "Insulin", "Vitamin"], a: "Melanin"},
+  {q: "Square root of 64?", o: ["6", "7", "8", "9"], a: "8"},
+  {q: "Boiling point of water?", o: ["90°C", "100°C", "110°C", "120°C"], a: "100°C"},
+  {q: "Largest ocean?", o: ["Atlantic", "Indian", "Arctic", "Pacific"], a: "Pacific"},
+  {q: "Who invented the bulb?", o: ["Tesla", "Edison", "Bell", "Newton"], a: "Edison"},
+  {q: "Color of a ripe banana?", o: ["Red", "Green", "Yellow", "Blue"], a: "Yellow"},
+  {q: "Shape of a cricket field?", o: ["Square", "Circle", "Oval", "Rect"], a: "Oval"},
+  {q: "Currency of USA?", o: ["Euro", "Pound", "Dollar", "Yen"], a: "Dollar"},
+  {q: "Smallest bird?", o: ["Sparrow", "Hummingbird", "Parrot", "Crow"], a: "Hummingbird"},
+  {q: "Most spoken language?", o: ["English", "Spanish", "Hindi", "Mandarin"], a: "English"},
+  {q: "Capital of India?", o: ["Mumbai", "Delhi", "Kolkata", "Chennai"], a: "Delhi"},
+  {q: "Hardest natural substance?", o: ["Gold", "Iron", "Diamond", "Silver"], a: "Diamond"},
+  {q: "How many zeros in 1000?", o: ["2", "3", "4", "5"], a: "3"},
+  {q: "Which animal says 'Moo'?", o: ["Dog", "Cat", "Cow", "Pig"], a: "Cow"},
+  {q: "Color of human blood?", o: ["Blue", "Red", "Green", "Yellow"], a: "Red"},
+  {q: "Largest planet?", o: ["Earth", "Mars", "Jupiter", "Saturn"], a: "Jupiter"},
+  {q: "Who wrote Harry Potter?", o: ["Tolkien", "Rowling", "Lewis", "Dahl"], a: "Rowling"},
+  {q: "Which is a primary color?", o: ["Green", "Orange", "Red", "Purple"], a: "Red"},
+  {q: "Baby dog is called?", o: ["Kitten", "Puppy", "Cub", "Calf"], a: "Puppy"},
+  {q: "Where do fish live?", o: ["Air", "Land", "Water", "Fire"], a: "Water"},
+  {q: "Sun is a?", o: ["Planet", "Star", "Satellite", "Comet"], a: "Star"},
+  {q: "Sides in a triangle?", o: ["3", "4", "5", "6"], a: "3"},
+  {q: "Frozen water is?", o: ["Steam", "Ice", "Mist", "Fog"], a: "Ice"},
+  {q: "Capital of UK?", o: ["Paris", "London", "Rome", "Berlin"], a: "London"},
+  {q: "National bird of USA?", o: ["Eagle", "Peacock", "Swan", "Hawk"], a: "Eagle"},
+  {q: "Days in a week?", o: ["5", "6", "7", "8"], a: "7"},
+  {q: "What bees make?", o: ["Milk", "Honey", "Silk", "Wool"], a: "Honey"},
+  {q: "Tallest animal?", o: ["Elephant", "Giraffe", "Camel", "Horse"], a: "Giraffe"},
+  {q: "Colors in a rainbow?", o: ["5", "6", "7", "8"], a: "7"},
+  {q: "Ship of the desert?", o: ["Horse", "Camel", "Donkey", "Goat"], a: "Camel"},
+  {q: "Nearest star to Earth?", o: ["Proxima", "Sirius", "Sun", "Vega"], a: "Sun"},
+  {q: "Human body has bones?", o: ["206", "208", "210", "212"], a: "206"},
+  {q: "Brain of computer?", o: ["RAM", "CPU", "Mouse", "Monitor"], a: "CPU"},
+  {q: "Largest country (Area)?", o: ["USA", "China", "Russia", "Canada"], a: "Russia"},
+  {q: "Smallest continent?", o: ["Europe", "Australia", "Asia", "Africa"], a: "Australia"},
+  {q: "Invented telephone?", o: ["Bell", "Edison", "Tesla", "Marconi"], a: "Bell"},
+  {q: "Gas in balloons?", o: ["Oxygen", "Helium", "Nitrogen", "Hydrogen"], a: "Helium"},
+  {q: "Vowels in English?", o: ["3", "4", "5", "6"], a: "5"},
+  {q: "Main source of energy?", o: ["Moon", "Sun", "Mars", "Earth"], a: "Sun"},
+  {q: "Spider has how many legs?", o: ["6", "8", "10", "12"], a: "8"},
+  {q: "Capital of Australia?", o: ["Sydney", "Melbourne", "Canberra", "Perth"], a: "Canberra"},
+  {q: "Planet closest to Sun?", o: ["Venus", "Mercury", "Earth", "Mars"], a: "Mercury"},
+  {q: "Who discovered gravity?", o: ["Einstein", "Newton", "Darwin", "Hawking"], a: "Newton"},
+  {q: "Batman's city?", o: ["Metropolis", "Gotham", "Star City", "Central"], a: "Gotham"},
+  {q: "Freezing point of water?", o: ["0°C", "10°C", "-10°C", "5°C"], a: "0°C"},
+  {q: "A century is years?", o: ["10", "50", "100", "1000"], a: "100"},
+  {q: "What covers 70% of Earth?", o: ["Land", "Forest", "Water", "Ice"], a: "Water"},
+  {q: "Largest land animal?", o: ["Rhino", "Hippo", "Elephant", "Bison"], a: "Elephant"},
+  {q: "Pyramids are in?", o: ["India", "Egypt", "China", "Rome"], a: "Egypt"},
+  {q: "Statue of Liberty city?", o: ["Boston", "DC", "New York", "Chicago"], a: "New York"},
+  {q: "Capital of China?", o: ["Shanghai", "Beijing", "Hong Kong", "Wuhan"], a: "Beijing"},
+  {q: "Fastest sea animal?", o: ["Shark", "Dolphin", "Sailfish", "Whale"], a: "Sailfish"},
+  {q: "First man on Moon?", o: ["Armstrong", "Aldrin", "Gagarin", "Collins"], a: "Armstrong"},
+  {q: "Which fruit has seeds outside?", o: ["Apple", "Strawberry", "Grape", "Mango"], a: "Strawberry"},
+  {q: "Top color of rainbow?", o: ["Red", "Violet", "Blue", "Green"], a: "Red"},
+  {q: "National flower of India?", o: ["Rose", "Lotus", "Lily", "Tulip"], a: "Lotus"},
+  {q: "Capital of Russia?", o: ["St Petersburg", "Moscow", "Kazan", "Sochi"], a: "Moscow"},
+  {q: "Ants have legs?", o: ["4", "6", "8", "10"], a: "6"},
+  {q: "Octopus hearts?", o: ["1", "2", "3", "4"], a: "3"},
+  {q: "Symbol for Gold?", o: ["Ag", "Au", "Fe", "Pb"], a: "Au"},
+  {q: "Years in a millennium?", o: ["100", "500", "1000", "10000"], a: "1000"},
+  {q: "Which bird cannot fly?", o: ["Parrot", "Ostrich", "Eagle", "Crow"], a: "Ostrich"},
+  {q: "Most popular sport?", o: ["Soccer", "Tennis", "Golf", "Rugby"], a: "Soccer"},
+  {q: "Largest desert?", o: ["Sahara", "Gobi", "Arabian", "Antarctic"], a: "Antarctic"},
+  {q: "Start of WWI?", o: ["1912", "1914", "1918", "1939"], a: "1914"},
+  {q: "Formula for salt?", o: ["KCl", "NaCl", "HCl", "NaOH"], a: "NaCl"},
+  {q: "Who painted Starry Night?", o: ["Picasso", "Van Gogh", "Monet", "Dali"], a: "Van Gogh"},
+  {q: "Capital of Canada?", o: ["Toronto", "Vancouver", "Ottawa", "Montreal"], a: "Ottawa"},
+  {q: "Planet with Big Red Spot?", o: ["Mars", "Jupiter", "Saturn", "Neptune"], a: "Jupiter"},
+  {q: "Roman numeral V?", o: ["1", "5", "10", "50"], a: "5"},
+  {q: "Dozen means?", o: ["10", "11", "12", "13"], a: "12"},
+  {q: "Current year?", o: ["2024", "2025", "2026", "2027"], a: "2026"},
+  {q: "Which blood type is donor?", o: ["A", "B", "AB", "O"], a: "O"},
+  {q: "Capital of Germany?", o: ["Munich", "Berlin", "Hamburg", "Frankfurt"], a: "Berlin"},
+  {q: "Largest bone in body?", o: ["Femur", "Tibia", "Skull", "Rib"], a: "Femur"},
+  {q: "Speed of light?", o: ["300k km/s", "150k km/s", "100k km/s", "500k km/s"], a: "300k km/s"},
+  {q: "Who is on $100 bill?", o: ["Washington", "Lincoln", "Franklin", "Grant"], a: "Franklin"},
+  {q: "Capital of Italy?", o: ["Milan", "Venice", "Rome", "Naples"], a: "Rome"},
+  {q: "Tallest mountain?", o: ["K2", "Everest", "Fuji", "Kilimanjaro"], a: "Everest"},
+  {q: "Mona Lisa has no?", o: ["Eyes", "Nose", "Eyebrows", "Lips"], a: "Eyebrows"},
+  {q: "Currency of Japan?", o: ["Yuan", "Won", "Yen", "Ringgit"], a: "Yen"},
+  {q: "Hardest rock?", o: ["Granite", "Marble", "Diamond", "Quartz"], a: "Diamond"},
+  {q: "Which month has 28 days?", o: ["Feb", "June", "April", "All"], a: "All"},
+  {q: "Zero invented by?", o: ["Greeks", "Romans", "Indians", "Arabs"], a: "Indians"},
+  {q: "Last letter of alphabet?", o: ["X", "Y", "Z", "A"], a: "Z"}
+];
+
+let ytIndex = 0;
+let ytInterval = null;
+let ytNextQTimeout = null; // To hold the timeout for the next question
+
+// 🔹 SOUND SETUP: Tries local file first, falls back to online URL if missing
+const ytTikSound = new Audio();
+ytTikSound.src = "ticking.mp3"; // 1. Look for this file in your folder
+ytTikSound.onerror = function() {
+    // 2. If not found, use this online backup
+    this.src = "https://actions.google.com/sounds/v1/foley/switch_light_04.ogg"; 
+};
+ytTikSound.loop = false; // We will play it manually every second
+
+const ytBuzzerSound = new Audio();
+ytBuzzerSound.src = "buzzer.mp3"; // 1. Look for this file in your folder
+ytBuzzerSound.onerror = function() {
+    // 2. If not found, use this online backup
+    this.src = "https://actions.google.com/sounds/v1/transportation/ship_bell.ogg";
+};
+// Note: You can now download any mp3, name it 'buzzer.mp3', and put it in your folder!
+
+window.toggleYTSession = function(start) {
+    const startBtn = document.getElementById('ytStartBtn');
+    const stopBtn = document.getElementById('ytStopBtn');
+
+    if (start) {
+        startBtn.style.display = 'none';
+        stopBtn.style.display = 'inline-block';
+        nextLiveQ();
+    } else {
+        startBtn.style.display = 'inline-block';
+        stopBtn.style.display = 'none';
+        if (ytInterval) clearInterval(ytInterval);
+        ytInterval = null;
+        if (ytNextQTimeout) clearTimeout(ytNextQTimeout);
+        ytNextQTimeout = null;
+        
+        // Reset the blackboard to its initial state
+        document.getElementById("bbQuestion").innerHTML = "YouTube Live Session<br>Click Start to Resume";
+        document.getElementById("bbTimer").innerText = "15";
+        document.getElementById("bbTimer").style.color = "white";
+        document.getElementById("bbTimer").style.borderColor = "rgba(255,255,255,0.7)";
+        document.getElementById("bbOptions").innerHTML = "";
+        document.getElementById("bbAnswer").style.visibility = "hidden";
+        window.speechSynthesis.cancel(); // Stop speaking
+        ytTikSound.pause();
+        ytTikSound.currentTime = 0;
+        ytBuzzerSound.pause();
+        ytBuzzerSound.currentTime = 0;
+    }
+}
+
+window.nextLiveQ = function(){
+    if(ytIndex >= ytQuestions.length) {
+        toggleYTSession(false); // Stop the session
+        alert("End of question list reached.");
+        ytIndex = 0; // Reset for next time
+        return;
+    }
+
+    const qData = ytQuestions[ytIndex];
+    
+    // Stop previous sounds
+    ytTikSound.pause();
+    ytTikSound.currentTime = 0;
+    ytBuzzerSound.pause();
+    ytBuzzerSound.currentTime = 0;
+
+    // Update UI
+    document.getElementById("bbQuestion").innerText = qData.q;
+    
+    const optsDiv = document.getElementById("bbOptions");
+    optsDiv.innerHTML = "";
+    qData.o.forEach(opt => {
+        const div = document.createElement("div");
+        div.innerText = opt;
+        // Tag the correct answer for highlighting later
+        if(opt === qData.a) {
+            div.dataset.correct = "true";
+        }
+        optsDiv.appendChild(div);
+    });
+
+    // Speak Question and Options
+    window.speechSynthesis.cancel();
+    // Store speech in window to prevent garbage collection stopping it early
+    window.currentSpeech = new SpeechSynthesisUtterance(`${qData.q}. Options: ${qData.o.join(", ")}`);
+    window.currentSpeech.rate = 1.0;
+    
+    // Play ticking sound only after speech finishes
+    window.currentSpeech.onend = function() {
+        // We handle ticking inside the interval now for better sync
+    };
+    
+    window.speechSynthesis.speak(window.currentSpeech);
+
+    const ansEl = document.getElementById("bbAnswer");
+    ansEl.innerText = "✅ " + qData.a;
+    ansEl.style.visibility = "hidden";
+    
+    const timerEl = document.getElementById("bbTimer");
+    let t = 15;
+    timerEl.innerText = t;
+    timerEl.style.color = "white";
+    timerEl.style.borderColor = "rgba(255,255,255,0.7)";
+
+    if(ytInterval) clearInterval(ytInterval);
+    if(ytNextQTimeout) clearTimeout(ytNextQTimeout);
+
+    ytInterval = setInterval(() => {
+        t--;
+        timerEl.innerText = t;
+
+        // Manual Ticking: Play distinct click every second between 9 and 4
+        if(t <= 9 && t > 3 && !window.speechSynthesis.speaking) {
+             ytTikSound.currentTime = 0;
+             ytTikSound.volume = 1.0; 
+             ytTikSound.play().catch(e => {});
+        }
+
+        if(t <= 3) { 
+            ansEl.style.visibility = "visible"; 
+            timerEl.style.color = "#ff5252"; 
+            timerEl.style.borderColor = "#ff5252";
+            // Highlight the correct option in green            
+            const correctDiv = optsDiv.querySelector('[data-correct="true"]');
+            if(correctDiv) {
+                correctDiv.style.color = "#00ff88"; // Bright Green
+                correctDiv.style.textShadow = "0 0 10px #00ff88";
+            }
+        }
+        if(t === 3) {
+            ytTikSound.pause(); // Stop ticking when answer is revealed
+            ytBuzzerSound.volume = 1.0;
+            ytBuzzerSound.play().catch(e => console.log(e)); // Play buzzer
+            const ansMsg = new SpeechSynthesisUtterance("The answer is " + qData.a);
+            window.speechSynthesis.speak(ansMsg);
+        }
+        if(t <= 0) {
+            clearInterval(ytInterval);
+            ytNextQTimeout = setTimeout(nextLiveQ, 3000); // Auto-load next question after 3 seconds
+        }
+    }, 1000);
+    ytIndex++;
+}
+</script>
+
+<!-- SAFE LOGIN OVERLAY (Replaces prompt to fix Dangerous Site warning) -->
+<div id="loginOverlay" style="position:fixed; top:0; left:0; width:100%; height:100%; background:#020b18; z-index:99999; display:flex; flex-direction:column; justify-content:center; align-items:center;">
+  <h2 style="color:#00f2ff; margin-bottom:20px;">Admin Access</h2>
+  <input type="password" id="adminPassInput" placeholder="Enter Password" style="padding:10px; font-size:16px; border-radius:5px; border:none; margin-bottom:15px; width:200px;">
+  <button onclick="checkAdminPass()" style="padding:10px 20px; font-size:16px; background:#00f2ff; color:black; border:none; border-radius:5px; cursor:pointer;">Login</button>
+</div>
+
+<script>
+window.checkAdminPass = function() {
+    const p = document.getElementById("adminPassInput").value;
+    if(p === "Waheguru@756") {
+        document.getElementById("loginOverlay").style.display = "none";
+        document.querySelector('.dashboard').style.display = 'flex';
+    } else {
+        alert("Incorrect Password");
+    }
+}
+// Add listener for 'Enter' key on the password input
+document.getElementById("adminPassInput").addEventListener("keypress", function(e) {
+    if (e.key === "Enter") {
+        checkAdminPass();
+    }
+});
+</script>
+</body>
+</html>

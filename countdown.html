@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz Countdown</title>
+
+<style>
+
+body{
+margin:0;
+font-family:Arial, sans-serif;
+background:url("background.jpg") no-repeat center center fixed;
+background-size:cover;
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
+flex-direction: column; /* Stack elements */
+gap: 20px; /* Space between elements */
+}
+
+.container{
+background:rgba(255,255,255,0.9);
+padding:30px;
+border-radius:10px;
+text-align:center;
+width:340px;
+border:3px solid #4e35d5;
+}
+
+.logo{
+width:200px;
+margin-bottom:20px;
+}
+
+h2{
+margin-bottom:20px;
+}
+
+.timer-box{
+display:flex;
+justify-content:center;
+gap:10px;
+font-size:22px;
+font-weight:bold;
+}
+
+.time{
+background:#4e35d5;
+color:white;
+padding:10px 12px;
+border-radius:6px;
+min-width:55px;
+}
+
+.label{
+font-size:12px;
+color:#555;
+margin-top:4px;
+}
+
+.time-container{
+display:flex;
+flex-direction:column;
+align-items:center;
+}
+
+#rulesBtn{
+margin-top:15px;
+padding:8px 12px;
+background:#4e35d5;
+color:white;
+border:none;
+border-radius:6px;
+cursor:pointer;
+}
+
+#rulesModal{
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,0.6);
+display:none;
+justify-content:center;
+align-items:center;
+}
+
+#rulesContent{
+background:white;
+padding:20px;
+border-radius:10px;
+width:80%;
+max-width:400px;
+text-align:left;
+position:relative;
+max-height:80%;
+overflow-y:auto;
+}
+
+#closeRules{
+position:absolute;
+top:10px;
+right:15px;
+font-weight:bold;
+cursor:pointer;
+}
+
+#logoutBtn{
+margin-top:10px;
+padding:8px 12px;
+background:#d63031;
+color:white;
+border:none;
+border-radius:6px;
+cursor:pointer;
+}
+/* Style for the chat icon */
+#chatIcon {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    font-size: 30px;
+    color: #4e35d5;
+    cursor: pointer;
+    z-index: 1000; /* Ensure it's above other elements */
+}
+
+.chat-container {
+    width: 340px;
+    height: 35vh;
+    background: rgba(255,255,255,0.9);
+    border-radius: 10px;
+    border: 3px solid #4e35d5;    
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+    box-sizing: border-box;
+}
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    margin-bottom: 10px;
+    display: flex;
+    flex-direction: column-reverse;
+}
+.chat-input-form {
+    display: flex;
+    gap: 5px;
+}
+.chat-input-form input {
+    flex: 1;
+    padding: 8px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
+.chat-input-form button {
+    padding: 8px 12px;
+    background: #4e35d5;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+.user-chat-message {
+    font-size: 14px;
+    margin-bottom: 5px;
+    word-wrap: break-word;
+    text-align: left; /* Align messages to the left */
+}
+.user-chat-message strong {
+    color: #4e35d5;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<img src="logo.png" class="logo">
+
+<h2>Quiz Starts In</h2>
+
+<div class="timer-box">
+
+<div class="time-container">
+<div class="time" id="days">00</div>
+<div class="label">Days</div>
+</div>
+
+<div class="time-container">
+<div class="time" id="hours">00</div>
+<div class="label">Hours</div>
+</div>
+
+<div class="time-container">
+<div class="time" id="minutes">00</div>
+<div class="label">Min</div>
+</div>
+
+<div class="time-container">
+<div class="time" id="seconds">00</div>
+<div class="label">Sec</div>
+</div>
+
+</div>
+
+<button id="rulesBtn">Read Rules</button>
+<button id="logoutBtn">Logout</button>
+
+</div>
+
+<!-- Rules Modal -->
+<div id="rulesModal">
+<div id="rulesContent">
+<span id="closeRules">✖</span>
+<h3>Quiz Rules</h3>
+<p id="rulesText">Loading rules...</p>
+</div>
+</div>
+
+<!-- Chat Box -->
+<div id="chatContainer" class="chat-container" style="display: none;">
+    <div class="chat-messages" id="chatMessages"></div>
+    <div class="chat-input-form">
+        <input type="text" id="chatInput" placeholder="Type a message...">
+        <button id="sendChatBtn">Send</button>
+
+
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
+import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
+import { getFirestore, doc, getDoc, onSnapshot, collection, query, orderBy, limit, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyC8LBv9zIEhGgFS-6rVaUelg1RzkQrJI4M",
+  authDomain: "junior-quiz-abef8.firebaseapp.com",
+  projectId: "junior-quiz-abef8",
+  storageBucket: "junior-quiz-abef8.firebasestorage.app",
+  messagingSenderId: "1027701484784",
+  appId: "1:1027701484784:web:8e5075d60d042c47d0a635"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+
+document.getElementById("logoutBtn").addEventListener("click", () => {
+  signOut(auth).then(() => {
+    localStorage.removeItem("quizUser");
+    window.location.href = "index.html";
+  }).catch((error) => {
+    console.error("Logout error", error);
+  });
+});
+
+// Rules modal
+const rulesBtn = document.getElementById("rulesBtn");
+const rulesModal = document.getElementById("rulesModal");
+const closeRules = document.getElementById("closeRules");
+const rulesText = document.getElementById("rulesText");
+rulesBtn.onclick = ()=>{ rulesModal.style.display="flex"; }
+closeRules.onclick = ()=>{ rulesModal.style.display="none"; }
+
+// Fetch rules from Firestore
+getDoc(doc(db, "quizRules", "text")).then(docSnap => {
+  if (docSnap.exists() && docSnap.data().text) {
+    rulesText.innerText = docSnap.data().text;
+  } else {
+    rulesText.innerText = "Rules have not been set by the admin yet.";
+  }
+});
+
+let timerInterval = null; // Defined outside to allow clearing
+
+// Create a ticking sound for the final seconds
+const tickSound = new Audio('https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg');
+
+// Listen to settings from Firestore for quiz start time
+onSnapshot(doc(db, "settings", "quiz"), (docSnap) => {
+  // 1. Clear any existing timer to prevent bugs/glitches
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+
+  if (docSnap.exists() && docSnap.data().startTime) {
+    // Force IST (Indian Standard Time)
+    let t = docSnap.data().startTime.replace(" ", "T");
+    if (!t.includes("+") && !t.endsWith("Z")) t += "+05:30";
+    const quizStart = new Date(t).getTime();
+
+    const updateTimer = () => {
+      const now = new Date().getTime();
+      const distance = quizStart - now;
+
+      // 2. Redirect to Quiz when time is up
+      if (distance <= 0) {
+        clearInterval(timerInterval);
+        window.location.href = "quiz.html";
+        return;
+      }
+
+      // 3. Update the display
+      const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+      document.getElementById("days").innerText = days.toString().padStart(2, '0');
+      document.getElementById("hours").innerText = hours.toString().padStart(2, '0');
+      document.getElementById("minutes").innerText = minutes.toString().padStart(2, '0');
+      document.getElementById("seconds").innerText = seconds.toString().padStart(2, '0');
+
+      // 4. Play a sound for the last 5 seconds
+      if (distance < 6000 && distance > 0) {
+        tickSound.play().catch(e => console.log("Audio play blocked by browser."));
+      }
+    };
+
+    // Run immediately (don't wait 1 second for first update)
+    updateTimer();
+    timerInterval = setInterval(updateTimer, 1000);
+
+  } else {
+    // 4. Show 00 when reset
+    document.getElementById("days").innerText = "00";
+    document.getElementById("hours").innerText = "00";
+    document.getElementById("minutes").innerText = "00";
+    document.getElementById("seconds").innerText = "00";
+  }
+});
+
+// Chat icon click handler
+document.getElementById("chatIcon").addEventListener("click", function() {
+    const chatContainer = document.getElementById("chatContainer");
+    chatContainer.style.display = chatContainer.style.display === "none" ? "flex" : "none";
+});
+
+// Add chat icon to the body
+const chatIcon = document.createElement('div');
+chatIcon.id = 'chatIcon';
+
+// CHAT LOGIC
+const chatMessagesDiv = document.getElementById("chatMessages");
+const chatInput = document.getElementById("chatInput");
+const sendChatBtn = document.getElementById("sendChatBtn");
+
+// Listen for new messages
+const qChat = query(collection(db, "chat"), orderBy("timestamp", "desc"), limit(50));
+onSnapshot(qChat, (snapshot) => {
+    chatMessagesDiv.innerHTML = "";
+    snapshot.forEach(doc => {
+        const msg = doc.data();
+        const div = document.createElement("div");
+        div.className = "user-chat-message";
+        const textNode = document.createTextNode(msg.text);
+        div.innerHTML = `<strong>${msg.name || 'User'}:</strong> `;
+        div.appendChild(textNode);
+        chatMessagesDiv.appendChild(div);
+    });
+});
+
+
+// Send a message
+async function sendMessage() {
+    const text = chatInput.value.trim();
+    if (text === "") return;
+
+    let userName = "Anonymous";
+    const localUserJSON = localStorage.getItem("quizUser");
+
+    if (localUserJSON) {
+        userName = JSON.parse(localUserJSON).name;
+    } else {
+        // Prompt for name if not in local storage
+        userName = prompt("Enter your name:");
+        if (!userName) userName = "Anonymous"; // Default if user cancels
+    }
+
+ try {
+        await addDoc(collection(db, "chat"), {
+            name: userName,
+            text: text,
+            timestamp: serverTimestamp()
+        });
+        chatInput.value = "";
+    } catch (e) {
+        console.error("Error sending message:", e);
+        alert("Could not send message.");
+    }
+}
+
+
+sendChatBtn.addEventListener("click", sendMessage);
+chatInput.addEventListener("keypress", (e) => {
+
+
+    if (e.key === "Enter") sendMessage();
+});
+
+document.body.appendChild(chatIcon);
+</script>
+
+</body>
+</html>

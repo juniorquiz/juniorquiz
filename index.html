@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Junior Quiz Login</title>
+
+<style>
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: url("background.jpg") no-repeat center center fixed;
+    background-size: cover;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.container {
+    background: rgba(255,255,255,0.9);
+    padding: 25px;
+    border-radius: 10px;
+    text-align: center;
+    width: 300px;
+    border: 3px solid #4e35d5;
+}
+
+input {
+    width: 90%;
+    padding: 10px;
+    margin: 8px 0;
+    font-size: 16px;
+}
+
+.password-container {
+  position: relative;
+  width: 90%;
+  margin: 8px 0;
+}
+
+.password-container input {
+  width: 100%;
+  padding: 10px 40px 10px 10px;
+  font-size: 16px;
+}
+
+.toggle-password {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  user-select: none;
+  font-size: 18px;
+}
+
+button {
+    padding: 12px 25px;
+    font-size: 18px;
+    cursor: pointer;
+    border: none;
+    border-radius: 25px;
+    background-color: #4e35d5;
+    color: white;
+    box-shadow: 0 0 10px #4e35d5, 0 0 20px #4e35d5;
+    transition: 0.3s;
+}
+
+button:hover{
+    transform: scale(1.08);
+    box-shadow: 0 0 15px #4e35d5, 0 0 30px #4e35d5;
+}
+
+button:disabled {
+    background: #aaa;
+    cursor: not-allowed;
+}
+
+#message {
+    margin-top: 10px;
+    font-weight: bold;
+    min-height: 24px;
+}
+
+.success { color: green; }
+.error   { color: red; }
+
+/* Glowing oval border container with animation */
+.logo-container {
+    width: 250px;
+    height: 180px;
+    border-radius: 50%;
+    border: 5px solid transparent;
+    background:
+    linear-gradient(white, white) padding-box,
+    linear-gradient(90deg,#00ccff,#ffffff,#00ccff,#ffffff,#00ccff) border-box;
+    box-shadow: 0 0 20px #4e35d5, 0 0 40px #4e35d5, 0 0 60px #ffffff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0 auto 20px auto;
+    background-color: white;
+    animation: borderMove 4s linear infinite;
+}
+
+.logo-image {
+    width: 400px;
+    height: 210px;
+    object-fit: contain;
+    border-radius: 50%;
+}
+
+@keyframes borderMove {
+0%{background-position:0% 50%;}
+100%{background-position:200% 50%;}
+}
+
+.whatsapp-float {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: #25d366;
+    color: white;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 2px 2px 3px #999;
+    z-index: 1000;
+    transition: all 0.3s ease;
+}
+.whatsapp-float:hover {
+    transform: scale(1.1);
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="logo-container">
+    <img src="logo.png" alt="Junior Quiz Live" class="logo-image">
+    </div>
+
+    <input type="email" id="email" placeholder="Enter Email" required>
+
+    <div class="password-container">
+      <input type="password" id="password" placeholder="Enter Password" required>
+      <span class="toggle-password" id="togglePassword">👁️</span>
+    </div>
+
+<p style="font-size:14px; color:#4e35d5; margin-top:8px; cursor:pointer;" id="forgotPassword">
+  Forgot Password?
+</p>
+    <button id="loginBtn">Start Quiz</button>
+
+    <button onclick="window.location.href='register.html'">Register</button>
+
+    <div id="message"></div>
+
+</div>
+
+<!-- WhatsApp Group Link (Replace # with your actual Group Link) -->
+<a href="https://chat.whatsapp.com/EDpDJ7P7Hu7Jz2a0KKQXAz?mode=gi_t" class="whatsapp-float" target="_blank" title="Join WhatsApp Group">
+  <svg width="35" height="35" viewBox="0 0 448 512" fill="white"><path d="M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-222 99.6-222 222 0 39.1 10.2 77.3 29.6 111L0 480l117.7-30.9c32.4 17.7 68.9 27 106.1 27h.1c122.3 0 224.1-99.6 224.1-222 0-59.3-25.2-115-47.1-157zM223.9 438.6c-32.6 0-64.6-8.8-94-25.6l-6.7-4-69.8 18.3L72 359.2l-4.4-7c-18.5-29.4-28.2-63.3-28.2-98.2 0-101.7 82.8-184.5 184.6-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 56.2 81.2 56.1 130.5 0 101.8-84.9 184.6-186.6 184.6zm101.2-138.2c-5.5-2.8-32.8-16.2-37.9-18-5.1-1.9-8.8-2.8-12.5 2.8-3.7 5.6-14.3 18-17.6 21.8-3.2 3.7-6.5 4.2-12 1.4-32.6-16.3-54-29.1-75.5-66-5.7-9.8 5.7-9.1 16.3-30.3 1.8-3.7.9-6.9-.5-9.7-1.4-2.8-12.5-30.1-17.1-41.2-4.5-10.8-9.1-9.3-12.5-9.5-3.2-.2-6.9-.2-10.6-.2-3.7 0-9.7 1.4-14.8 6.9-5.1 5.6-19.4 19-19.4 46.3 0 27.3 19.9 53.7 22.6 57.4 2.8 3.7 39.1 59.7 94.8 83.8 35.2 15.2 49 16.5 66.6 13.9 10.7-1.6 32.8-13.4 37.4-26.4 4.6-13 4.6-24.1 3.2-26.4-1.3-2.5-5-3.9-10.5-6.6z"/></svg>
+</a>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, sendPasswordResetEmail, deleteUser } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
+import { getFirestore, doc, getDoc, setDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyC8LBv9zIEhGgFS-6rVaUelg1RzkQrJI4M",
+  authDomain: "junior-quiz-abef8.firebaseapp.com",
+  projectId: "junior-quiz-abef8",
+  storageBucket: "junior-quiz-abef8.firebasestorage.app",
+  messagingSenderId: "1027701484784",
+  appId: "1:1027701484784:web:8e5075d60d042c47d0a635"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+// Eye toggle
+const passwordInput = document.getElementById("password");
+const togglePassword = document.getElementById("togglePassword");
+togglePassword.addEventListener("click", function () {
+  const type = passwordInput.type === "password" ? "text" : "password";
+  passwordInput.type = type;
+  this.textContent = type === "password" ? "👁️" : "🙈";
+});
+
+// Login button
+document.getElementById("loginBtn").addEventListener("click", async () => {
+  const btn = document.getElementById("loginBtn");
+  const msg = document.getElementById("message");
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value;
+
+  msg.className = "";
+  msg.textContent = "";
+
+  if (!email || !password) {
+    msg.className = "error";
+    msg.textContent = "Please enter email and password";
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = "Checking...";
+
+  try {
+    // 🔹 Firebase login
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
+
+    // 🔹 Fetch user profile
+    const userRef = doc(db, "participants", user.uid);
+    const userSnap = await getDoc(userRef);
+
+    if (!userSnap.exists()) {
+      // Self-repair: Delete the broken account so they can register again
+      await deleteUser(user);
+      throw new Error("Registration incomplete. Please register again.");
+    }
+    const userData = userSnap.data();
+
+    // 🔹 Email verification
+    if (!user.emailVerified) {
+      msg.className = "error";
+      msg.textContent = "Please verify your email first";
+      passwordInput.value = "";
+      return;
+    }
+
+    // 🔹 Quiz finished check
+    if (userData.quizFinished === true) {
+      msg.className = "error";
+      msg.textContent = "You have already completed the quiz";
+      passwordInput.value = "";
+      return;
+    }
+
+    // 🔹 CHECK ADMIN SETTINGS
+    const settingsSnap = await getDoc(doc(db, "settings", "quiz"));
+    const settings = settingsSnap.exists() ? settingsSnap.data() : {};
+    const activeRound = settings.currentRound || 1;
+    const playerRound = userData.currentRound || 1;
+
+    // Block if quiz is globally ended by admin
+    if (settings.status === "ended") {
+      msg.className = "error";
+      msg.textContent = "The quiz has been ended by the admin.";
+      return;
+    }
+    // Block if player did not qualify for the current active round
+    if (playerRound < activeRound) {
+      throw new Error(`Login is closed. You did not qualify for Round ${activeRound}.`);
+    }
+
+    // 🔹 Record server timestamp
+    await updateDoc(userRef, {
+      lastLogin: serverTimestamp(),
+      loginCount: (userData.loginCount || 0) + 1
+    });
+
+    // 🔹 Record live login for admin (and use it to get a server-verified time)
+    const liveLoginRef = doc(db, "liveLogins", user.uid);
+    await setDoc(liveLoginRef, {
+      name: userData.name,
+      email: user.email,
+      age: userData.age,
+      loginTime: serverTimestamp()
+    });
+
+    // 🔹 Get the server-verified time by reading the document we just wrote
+    const liveLoginSnap = await getDoc(liveLoginRef);
+    const now = liveLoginSnap.exists() ? liveLoginSnap.data().loginTime.toDate() : new Date();
+
+    // 🔹 Save local storage for quiz page
+    localStorage.setItem("quizUser", JSON.stringify({
+      uid: user.uid,
+      email: user.email,
+      name: userData.name,
+      age: userData.age
+    }));
+
+    msg.className = "success";
+    msg.textContent = "Login successful!";
+
+    // 🔹 REDIRECT LOGIC
+    let redirectUrl = "quiz.html"; // Default: Go to quiz
+
+    if (settings.startTime) {
+      // Convert "2026-03-15 10:00" to ISO string with +05:30 (IST)
+      let isoTime = settings.startTime.replace(" ", "T");
+      if (!isoTime.includes("+") && !isoTime.endsWith("Z")) isoTime += "+05:30";
+      const quizStartTime = new Date(isoTime);
+      const diffMs = now - quizStartTime; // Time difference in milliseconds
+
+      if (diffMs < 0) {
+        // Case 1: User is EARLY. Send to countdown.
+        redirectUrl = "countdown.html";
+      } else if (diffMs > (2 * 60 * 60 * 1000)) {
+        // Case 2: User is LATE (more than 2 hours). Block them.
+        throw new Error("Entry closed. The quiz started over 2 hours ago.");
+      }
+      // Case 3: User is ON TIME (within the 2-hour window). They proceed to quiz.html (the default).
+    }
+    setTimeout(() => { window.location.href = redirectUrl; }, 1200);
+
+  } catch (error) {
+    msg.className = "error";
+    let errMsg = error.message;
+    if (errMsg.includes("user-not-found") || errMsg.includes("wrong-password")) errMsg = "Incorrect email or password";
+    else if (errMsg.includes("too-many-requests")) errMsg = "Too many attempts. Try again later";
+    msg.textContent = errMsg;
+    passwordInput.value = "";
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Start Quiz";
+  }
+});
+// Firebase password reset
+document.getElementById("forgotPassword").addEventListener("click", () => {
+    const email = document.getElementById("email").value.trim();
+    if (!email) {
+        alert("Please enter your email first!");
+        return;
+    }
+
+    sendPasswordResetEmail(auth, email)
+        .then(() => {
+            alert("Password reset email sent! Check your inbox.");
+        })
+        .catch((error) => {
+            alert("Error sending reset email: " + error.message);
+        });
+});
+</script>
+
+</body>
+</html>

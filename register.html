@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register - Junior Quiz Live</title>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: url("background.jpg") no-repeat center center fixed;
+      background-size: cover;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .container {
+      background: rgba(255,255,255,0.92);
+      padding: 30px;
+      border-radius: 12px;
+      text-align: center;
+      width: 320px;
+      border: 3px solid #4e35d5;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+    }
+
+    .remaining {
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 20px;
+      color: #2e7d32; /* green when many spots left */
+    }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      box-sizing: border-box;
+    }
+
+    .password-container {
+      position: relative;
+      margin: 10px 0;
+    }
+
+    .password-container input {
+      padding-right: 45px; /* space for eye */
+    }
+
+    .toggle-password {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      cursor: pointer;
+      font-size: 20px;
+      user-select: none;
+      color: #555;
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      font-size: 18px;
+      margin: 12px 0;
+      cursor: pointer;
+      border: none;
+      border-radius: 30px;
+      background: #4e35d5;
+      color: white;
+      box-shadow: 0 0 12px #4e35d5;
+      transition: all 0.3s;
+    }
+
+    button:hover:not(:disabled) {
+      transform: scale(1.04);
+      box-shadow: 0 0 25px #4e35d5;
+    }
+
+    button:disabled {
+      background: #aaa;
+      cursor: not-allowed;
+    }
+
+    #message {
+      margin-top: 12px;
+      font-weight: bold;
+      min-height: 24px;
+    }
+
+    .success { color: green; }
+    .error   { color: red; }
+
+    .debug-info {
+      margin-top: 20px;
+      font-size: 12px;
+      color: #666;
+    }
+
+    /* Logo glow */
+    .logo-container {
+      width: 220px;
+      height: 160px;
+      border-radius: 50%;
+      border: 5px solid transparent;
+      background: linear-gradient(white, white) padding-box,
+                  linear-gradient(90deg, #00ccff, #ffffff, #00ccff, #ffffff, #00ccff) border-box;
+      box-shadow: 0 0 20px #4e35d5, 0 0 40px #4e35d5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 0 auto 25px;
+      animation: borderMove 5s linear infinite;
+    }
+
+    .logo-image {
+      width: 180px;
+      height: auto;
+      object-fit: contain;
+    }
+
+    @keyframes borderMove {
+      0%   { background-position: 0% 50%; }
+      100% { background-position: 200% 50%; }
+    }
+
+.whatsapp-float {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: #25d366;
+    color: white;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 2px 2px 3px #999;
+    z-index: 1000;
+    transition: all 0.3s ease;
+}
+.whatsapp-float:hover {
+    transform: scale(1.1);
+}
+
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <div class="logo-container">
+    <img src="logo.png" alt="Junior Quiz Live" class="logo-image">
+  </div>
+
+  <!-- This will show real remaining count like: Remaining participants: 87/100 -->
+  <div class="remaining" id="remainingSlots">Loading remaining spots...</div>
+
+  <input type="text"     id="name"          placeholder="Full Name" required>
+  <input type="email"    id="email"         placeholder="Email" required>
+  <input type="number"   id="age"           placeholder="Age (5-17)" min="5" max="17" required>
+
+  <div class="password-container">
+    <input type="password" id="password"      placeholder="Password (min 8 chars)" required>
+    <span class="toggle-password" id="togglePassword">👁️</span>
+  </div>
+
+  <div class="password-container">
+    <input type="password" id="confirmPassword" placeholder="Confirm Password" required>
+    <span class="toggle-password" id="toggleConfirmPassword">👁️</span>
+  </div>
+
+  <button id="registerBtn">Register</button>
+  <button onclick="window.location.href='index.html'">Already have an account? Login</button>
+
+  <div id="message"></div>
+
+  <!-- Debug line: If you see this text, JavaScript is running -->
+  <div class="debug-info" id="debug">please check your spam email box for verification email
+  </div>
+
+</div>
+
+<!-- Firebase v12 Modular SDK – MUST have type="module" -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
+  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, deleteUser } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
+  import { getFirestore, doc, setDoc, collection, onSnapshot, query, getDoc, getCountFromServer } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyC8LBv9zIEhGgFS-6rVaUelg1RzkQrJI4M",
+    authDomain: "junior-quiz-abef8.firebaseapp.com",
+    projectId: "junior-quiz-abef8",
+    storageBucket: "junior-quiz-abef8.firebasestorage.app",
+    messagingSenderId: "1027701484784",
+    appId: "1:1027701484784:web:8e5075d60d042c47d0a635"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  const PARTICIPANTS_COLLECTION = "participants";
+
+  const remainingElem = document.getElementById("remainingSlots");
+  const registerBtn   = document.getElementById("registerBtn");
+  let unsubscribe = null;
+  let settingsUnsubscribe = null;
+  
+  // Define these GLOBALLY so registerBtn can see them
+  let MAX_PARTICIPANTS = 100; 
+  let currentCount = 0;
+
+  const updateUI = () => {
+    const remaining = MAX_PARTICIPANTS - currentCount;
+    if (remaining > 0) {
+      remainingElem.textContent = `Remaining participants: ${remaining}/ ${MAX_PARTICIPANTS}`;
+      remainingElem.style.color = remaining <= 10 ? "#e65100" : "#2e7d32";
+      registerBtn.disabled = false;
+      registerBtn.textContent = "Register";
+    } else {
+      remainingElem.textContent = `Registration full (${MAX_PARTICIPANTS}/ ${MAX_PARTICIPANTS})`;
+      remainingElem.style.color = "#d32f2f";
+      registerBtn.disabled = true;
+      registerBtn.textContent = "Registration Full";
+    }
+  };
+
+  // Real-time count listener
+  async function startCountListener() {
+    // 1. Listen to Settings (Limit)
+    settingsUnsubscribe = onSnapshot(doc(db, "settings", "quiz"), (snap) => {
+      if (snap.exists() && snap.data().participantLimit) {
+        MAX_PARTICIPANTS = snap.data().participantLimit;
+        updateUI();
+      }
+    });
+
+    // 2. Listen to Participants (Count)
+    const colRef = collection(db, PARTICIPANTS_COLLECTION);
+    const q = query(colRef);
+
+    unsubscribe = onSnapshot(q, (snapshot) => {
+      currentCount = snapshot.size;
+      updateUI();
+    }, (err) => {
+      console.error("Count error:", err);
+      remainingElem.textContent = "Error loading count – check console";
+      remainingElem.style.color = "red";
+    });
+  }
+
+  startCountListener();
+
+  // Eye toggle
+  function setupToggle(inputId, toggleId) {
+    const input = document.getElementById(inputId);
+    const toggle = document.getElementById(toggleId);
+    toggle.addEventListener("click", () => {
+      input.type = input.type === "password" ? "text" : "password";
+      toggle.textContent = input.type === "password" ? "👁️" : "🙈";
+    });
+  }
+
+  setupToggle("password", "togglePassword");
+  setupToggle("confirmPassword", "toggleConfirmPassword");
+
+  // Allow pressing "Enter" to register
+  document.querySelector('.container').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') registerBtn.click();
+  });
+
+  // Register handler (same as before)
+  registerBtn.addEventListener("click", async () => {
+    const btn = registerBtn;
+    const msg = document.getElementById("message");
+
+    if (btn.disabled) return;
+
+    const name = document.getElementById("name").value.trim();
+    const email = document.getElementById("email").value.trim();
+    const age = Number(document.getElementById("age").value);
+    const password = document.getElementById("password").value;
+    const confirm = document.getElementById("confirmPassword").value;
+
+    msg.textContent = "";
+    msg.className = "";
+
+    if (!name || !email || !age || !password || !confirm) {
+      msg.className = "error"; msg.textContent = "Fill all fields"; return;
+    }
+    if (password.length < 8) {
+      msg.className = "error"; msg.textContent = "Password min 8 chars"; return;
+    }
+    if (password !== confirm) {
+      msg.className = "error"; msg.textContent = "Passwords don't match"; return;
+    }
+    if (age < 5 || age > 17) {
+      msg.className = "error"; msg.textContent = "Age must be 5–17"; return;
+    }
+    if (!email.includes("@") || !email.includes(".")) {
+      msg.className = "error"; msg.textContent = "Invalid email"; return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = "Checking availability...";
+
+    try {
+      // 1. FINAL CHECK: Ensure we haven't exceeded the limit right now
+      const settingsDoc = await getDoc(doc(db, "settings", "quiz"));
+      let currentLimit = 100;
+      if (settingsDoc.exists() && settingsDoc.data().participantLimit) {
+          currentLimit = settingsDoc.data().participantLimit;
+      }
+
+      const countSnap = await getCountFromServer(collection(db, PARTICIPANTS_COLLECTION));
+      if (countSnap.data().count >= currentLimit) {
+        throw new Error("Registration is full. Please try again next time.");
+      }
+
+      btn.textContent = "Creating...";
+
+      const userCred = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCred.user;
+      
+      try {
+        await setDoc(doc(db, PARTICIPANTS_COLLECTION, user.uid), {
+          name, email, age,
+          quizStarted: false,
+          quizFinished: false,
+          score: 0,
+          currentRound: 1,
+          createdAt: new Date()
+        });
+        await sendEmailVerification(user);
+      } catch (dbError) {
+        // Rollback: If DB write fails, delete the auth user so email isn't stuck
+        await deleteUser(user);
+        console.error("Rollback performed due to:", dbError);
+        throw new Error("Registration failed during save. Please try again.");
+      }
+
+      msg.className = "success";
+      msg.textContent = "Success! Check email to verify.";
+      // form clear
+      document.querySelectorAll('input').forEach(i => i.value = '');
+    } catch (e) {
+      if (e.message.includes("email-already-in-use")) {
+        // Auto-fix: Try to sign in and check if it's a broken "zombie" account
+        try {
+           // Try to login with the password they just entered
+           const userCred = await signInWithEmailAndPassword(auth, email, password);
+           const oldUser = userCred.user;
+           const docSnap = await getDoc(doc(db, PARTICIPANTS_COLLECTION, oldUser.uid));
+           
+           // If login works but no profile data exists -> Delete the zombie account
+           if (!docSnap.exists()) {
+             await deleteUser(oldUser);
+             msg.className = "success";
+             msg.textContent = "Previous data cleared. Click Register again!";
+             return;
+           }
+        } catch (loginErr) {
+           // If password doesn't match the old account, we can't fix it auto-magically
+        }
+        msg.className = "error";
+        msg.textContent = "Email taken. Please Login.";
+      } else {
+        msg.className = "error";
+        msg.textContent = e.message;
+      }
+    } finally {
+      // Release the lock and let updateUI decide if button should be enabled based on limit
+      btn.disabled = false;
+      updateUI();
+    }
+  });
+
+  // Cleanup
+  window.addEventListener("beforeunload", () => {
+    if (unsubscribe) unsubscribe();
+    if (settingsUnsubscribe) settingsUnsubscribe();
+  });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Junior Quiz Live</title>
+
+<style>
+
+body{
+margin:0;
+font-family:Arial;
+background:url("background.jpg");
+background-size:cover;
+background-position:center;
+height:100vh;
+display:flex;
+justify-content:center;
+align-items:center;
+}
+
+.container{
+width:80%;
+height:60%;
+background:rgba(255,255,255,0.95);
+border-radius:15px;
+padding:30px;
+border:4px solid #4e35d5;
+display:flex;
+flex-direction:column;
+justify-content:center;
+align-items:center;
+text-align:center;
+}
+
+.title{
+font-size:100px;
+font-weight:bold;
+background:linear-gradient(45deg,#ff0000,#ff9900,#00ccff,#9900ff);
+-webkit-background-clip:text;
+color:transparent;
+margin-bottom:40px;
+}
+
+#questionNumber{
+font-size:50px;
+margin-bottom:30px;
+}
+
+#timer{
+color:red;
+font-size:45px;
+margin-bottom:10px;
+}
+
+#timer-bar-container{
+width:60%;
+height:15px;
+background:#ccc;
+border-radius:10px;
+margin-bottom:20px;
+overflow:hidden;
+}
+
+#timer-bar{
+width:100%;
+height:100%;
+background:green;
+}
+
+#question{
+font-size:50px;
+margin-bottom:30px;
+}
+
+#options{
+width:60%;
+display:flex;
+flex-direction:column;
+gap:12px;
+}
+
+.option-btn{
+padding:14px;
+font-size:45px;
+border:none;
+border-radius:10px;
+background:#fff;
+cursor:pointer;
+}
+
+.option-btn:hover{
+background:#eee;
+}
+
+#result{
+font-size:35px;
+font-weight:bold;
+margin-top:20px;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="title">Junior Quiz Live</div>
+
+<div id="questionNumber"></div>
+
+<div id="timer">Time: 15</div>
+
+<div id="timer-bar-container">
+<div id="timer-bar"></div>
+</div>
+
+<div id="question"></div>
+
+<div id="options"></div>
+
+<div id="result"></div>
+
+</div>
+
+<script>
+
+/* DISABLE COPY / RIGHT CLICK / F12 */
+
+document.addEventListener("contextmenu", e => e.preventDefault());
+
+document.addEventListener("keydown", function(e){
+if(e.keyCode==123){return false;}
+if(e.ctrlKey && e.keyCode==67){return false;}
+if(e.ctrlKey && e.keyCode==85){return false;}
+if(e.ctrlKey && e.shiftKey && e.keyCode==73){return false;} // Block Ctrl+Shift+I
+if(e.ctrlKey && e.shiftKey && e.keyCode==74){return false;} // Block Ctrl+Shift+J
+});
+
+document.body.style.userSelect="none";
+
+</script>
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
+import { getFirestore, doc, getDoc, setDoc, updateDoc, serverTimestamp, collection, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+
+const firebaseConfig = {
+apiKey: "AIzaSyC8LBv9zIEhGgFS-6rVaUelg1RzkQrJI4M",
+authDomain: "junior-quiz-abef8.firebaseapp.com",
+projectId: "junior-quiz-abef8",
+storageBucket: "junior-quiz-abef8.firebasestorage.app",
+messagingSenderId: "1027701484784",
+appId: "1:1027701484784:web:8e5075d60d042c47d0a635"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+
+/* SECURITY CHECK (BLOCK BYPASS) */
+onAuthStateChanged(auth, async (userAuth) => {
+  if (!userAuth) {
+    window.location.href = "index.html"; // Redirect if not logged in
+  } else {
+    // Double check DB status
+    const docSnap = await getDoc(doc(db, "participants", userAuth.uid));
+    if(!docSnap.exists() || docSnap.data().quizFinished === true){
+       alert("You have already completed the quiz or are invalid.");
+       window.location.href = "index.html";
+    }
+  }
+});
+
+/* USER INFO */
+
+let localUser = JSON.parse(localStorage.getItem("quizUser"));
+// Fallback if local storage is cleared but auth persists (prevent script crash)
+if(!localUser) localUser = { uid: "unknown", name: "Participant" };
+
+let uid = localUser.uid;
+let name = localUser.name;
+
+/* QUIZ VARIABLES */
+
+let questions=[];
+let current=0;
+let score=0;
+let time=15;
+let QUESTION_TIME_LIMIT = 15; // Default, will be updated from settings
+let timer;
+let quizStart=new Date();
+let quizAlreadyFinished = false;
+
+/* LOAD QUESTIONS FROM FIREBASE */
+
+async function loadQuestions(){
+  const snapshot = await getDocs(collection(db,"questions"));
+
+  snapshot.forEach((doc)=>{
+    questions.push(doc.data());
+  });
+
+  questions.sort(()=>Math.random()-0.5);
+
+  loadQuestion();
+}
+
+/* GLOBAL LISTENER FOR ADMIN 'END QUIZ' COMMAND & SETTINGS */
+/* We place this outside loadQuestions so it works even if questions fail to load */
+onSnapshot(doc(db, "settings", "quiz"), (docSnap) => {
+  if (docSnap.exists()) {
+    const data = docSnap.data();
+    if (data.status === "ended") {
+      finishQuiz();
+    }
+    // If admin resets quiz and user is stuck on "finished" screen, reload to play again
+    if (data.status === "playing" && quizAlreadyFinished) {
+      window.location.reload();
+    }
+    QUESTION_TIME_LIMIT = data.questionTime || 15; // Update question time limit
+  }
+});
+
+/* TAB SWITCH DETECTION */
+
+let warningCount=0;
+
+document.addEventListener("visibilitychange",()=>{
+
+if(document.hidden){
+
+warningCount++;
+
+if(warningCount===1){
+alert("⚠️ ANTI-CHEAT WARNING ⚠️\n\nYou switched tabs or opened another app.\nDo not leave this screen again, or your quiz will be AUTOMATICALLY FINISHED!");
+} else if(warningCount>=2){
+finishQuiz();
+alert("You violated the anti-cheat rules again. Your quiz has been submitted.");
+}
+
+}
+
+});
+
+/* LOAD QUESTION */
+
+function loadQuestion(){
+
+if(current>=questions.length){
+finishQuiz();
+return;
+}
+
+let q=questions[current];
+
+document.getElementById("questionNumber").innerText=
+"Question "+(current+1)+" / "+questions.length;
+
+document.getElementById("question").innerText=q.q;
+
+let optionsDiv=document.getElementById("options");
+optionsDiv.innerHTML="";
+
+let opts=[...q.o].sort(()=>Math.random()-0.5);
+
+opts.forEach(option=>{
+
+let btn=document.createElement("button");
+
+btn.className="option-btn";
+btn.innerText=option;
+btn.onclick=()=>selectAnswer(option);
+
+optionsDiv.appendChild(btn);
+
+});
+
+/* LIVE ADMIN DATA */
+
+let nowLive = new Date();
+let timeTakenLive = Math.floor((nowLive - quizStart) / 1000);
+
+setDoc(doc(db,"liveQuiz",uid),{
+name:name,
+score:score,
+question:current+1,
+activity: "Question " + (current+1),
+activeTime: timeTakenLive + "s",
+status:"playing",
+time:serverTimestamp()
+}, {merge: true});
+
+startTimer();
+
+}
+
+/* TIMER */
+
+function startTimer(){ // Use QUESTION_TIME_LIMIT here
+
+time=15;
+
+let bar=document.getElementById("timer-bar");
+
+bar.style.width="100%";
+
+document.getElementById("timer").innerText="Time: "+time;
+
+clearInterval(timer);
+
+timer=setInterval(()=>{
+
+time--;
+
+document.getElementById("timer").innerText="Time: "+time;
+
+let percent=(time/QUESTION_TIME_LIMIT)*100; // Use QUESTION_TIME_LIMIT for percentage
+
+bar.style.width=percent+"%";
+
+if(percent>50) bar.style.background="green";
+else if(percent>20) bar.style.background="yellow";
+else bar.style.background="red";
+
+if(time<=0){
+
+clearInterval(timer);
+nextQuestion();
+
+}
+
+},1000);
+
+}
+
+/* ANSWER */
+
+function selectAnswer(answer){
+
+clearInterval(timer);
+
+let correct=questions[current].a;
+
+let buttons=document.querySelectorAll(".option-btn");
+
+buttons.forEach(btn=>{
+
+if(btn.innerText===correct){
+btn.style.background="green";
+btn.style.color="white";
+}
+
+if(btn.innerText===answer && answer!==correct){
+btn.style.background="red";
+btn.style.color="white";
+}
+
+btn.disabled=true;
+
+});
+
+if(answer===correct) score++;
+
+setTimeout(nextQuestion,1000);
+
+}
+
+/* NEXT QUESTION */
+
+function nextQuestion(){
+
+current++;
+loadQuestion();
+
+}
+
+/* FINISH QUIZ */
+
+async function finishQuiz(){
+
+if(quizAlreadyFinished) return;
+quizAlreadyFinished = true;
+
+/* HIDE QUIZ UI IMMEDIATELY (Before waiting for DB) */
+document.getElementById("question").style.display="none";
+document.getElementById("options").style.display="none";
+document.getElementById("timer").style.display="none";
+document.getElementById("questionNumber").style.display="none";
+document.getElementById("timer-bar-container").style.display="none";
+
+/* SHOW RESULT MESSAGE IMMEDIATELY */
+document.getElementById("result").innerHTML=
+"Thank you for completing the quiz.<br><br>"+
+"Your result will be posted in our next video.<br><br>"+
+"Only top 70 participants will move to round 2.<br><br>" +
+"<button onclick='window.location.href=\"index.html\"' style='padding:10px 20px; font-size:18px; border-radius:10px; border:none; background:#4e35d5; color:white; cursor:pointer;'>Back to Home</button>";
+ 
+  let finish=new Date();
+  let timeTaken=Math.floor((finish-quizStart)/1000);
+
+  try {
+    await updateDoc(doc(db,"participants",uid),{
+      score:score,
+      quizFinished:true,
+      quizTimeTaken:timeTaken,
+      quizFinishTime:serverTimestamp()
+    });
+
+    await setDoc(doc(db,"liveQuiz",uid),{
+      name:name,
+      score:score,
+      status:"finished"
+    });
+  } catch (error) {
+    console.error("Error saving quiz results:", error);
+    document.getElementById("result").innerHTML += "<p style='color:red;'>Error saving your results. Please contact support.</p>";
+  }
+}
+
+/* START QUIZ */
+
+loadQuestions();
+
+</script>
+
+</body>
+</html>

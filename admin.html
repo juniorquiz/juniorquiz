@@ -443,6 +443,7 @@ border-collapse:collapse;
 </table>
 
 <button class="download" onclick="downloadCSV()">Download CSV</button>
+<button style="background:#d63031; color:white; width:100%; margin-top:10px; padding:12px; border:none; border-radius:4px; font-weight:bold; cursor:pointer;" onclick="clearResultSheet()">Clear Sheet</button>
 
 </div>
   </div>
@@ -452,6 +453,7 @@ border-collapse:collapse;
     <div class="overlay-box" style="width: 350px; height: auto; align-items: stretch;">
       <button class="closeOverlay">X</button>
       <h2 style="text-align:center; color:#00f2ff;">Control Panel</h2>
+      <div id="controlTimeDisplay" style="text-align:center; color:#00f2ff; font-size:14px; margin-bottom:15px; border:1px dashed #00f2ff; padding:5px;">Set Time: Not Set</div>
       
       <button class="end" onclick="endQuiz()">🛑 End Quiz</button>
       <button class="resetquiz" onclick="resetQuiz()">🔄 Reset Quiz Scores</button>
@@ -575,6 +577,15 @@ onSnapshot(doc(db, "settings", "quiz"), (docSnap) => {
         }
         if (data.questionTime) {
             document.getElementById('questionTimeInput').value = data.questionTime;
+        }
+        // Handle Quiz Start Time and Auto-Countdown
+        const ctrlTime = document.getElementById("controlTimeDisplay");
+        if (data.startTime) {
+            if(ctrlTime) ctrlTime.innerText = "Set Time: " + data.startTime;
+            startGlobalCountdown(data.startTime);
+        } else {
+            if(ctrlTime) ctrlTime.innerText = "Set Time: Not Set";
+            resetAdminTimer();
         }
     } else {
         maxParticipantLimit = 100; // Fallback to default
@@ -760,6 +771,36 @@ window.downloadCSV = function(){
   a.click();
 }
 
+/* CLEAR RESULT SHEET */
+window.clearResultSheet = async function(){
+  if(confirm("Are you sure you want to CLEAR the result sheet? This will reset all participant scores and finished status to 0.")){
+    try {
+      const snapshot = await getDocs(collection(db, "participants"));
+      const updates = [];
+      snapshot.forEach(d => {
+        updates.push(updateDoc(d.ref, { 
+          score: 0, 
+          quizFinished: false, 
+          quizTimeTaken: 0 
+        }));
+      });
+      await Promise.all(updates);
+
+      // Clear liveQuiz board as well
+      const liveSnap = await getDocs(collection(db, "liveQuiz"));
+      const liveDeletes = [];
+      liveSnap.forEach(d => liveDeletes.push(deleteDoc(d.ref)));
+      await Promise.all(liveDeletes);
+
+      alert("Sheet cleared!");
+      showResults(); // Refresh table view
+    } catch(e) {
+      console.error(e);
+      alert("Error clearing sheet");
+    }
+  }
+}
+
 /* PARTICIPANT & ROUND MANAGEMENT */
 window.saveParticipantLimit = async function() {
     const limit = document.getElementById('participantLimitInput').value;
@@ -852,7 +893,7 @@ window.openControlPanel = function() {
 
 /* SET QUIZ TIME */
 window.setQuizTime=function(){
-  let t=prompt("Enter Quiz Date & Time (YYYY-MM-DD HH:MM)");
+  let t=prompt("Enter Quiz Date & Time (Format: YYYY-MM-DD HH:MM)\nExample: 2026-03-15 10:00");
   if(t){
     setDoc(doc(db, "settings", "quiz"), { startTime: t }, { merge: true });
     alert("Quiz time saved");
@@ -1038,37 +1079,53 @@ document.getElementById("deleteSelectedBtn").addEventListener("click", async () 
 
 /* LOCAL ADMIN TIMER (2 HOURS) */
 let adminTimerInterval = null;
-let adminTimeRemaining = 7200; // 2 hours
+
+window.startGlobalCountdown = function(startTimeStr) {
+  if(adminTimerInterval) clearInterval(adminTimerInterval);
+  
+  let isoTime = startTimeStr.replace(" ", "T");
+  if (!isoTime.includes("+") && !isoTime.endsWith("Z")) isoTime += "+05:30";
+  const targetDate = new Date(isoTime).getTime();
+
+  adminTimerInterval = setInterval(() => {
+    const now = new Date().getTime();
+    const distance = targetDate - now;
+
+    if (distance <= 0) {
+      clearInterval(adminTimerInterval);
+      document.getElementById("adminTimer").innerText = "00:00:00";
+      return;
+    }
+
+    const h = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const m = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+    const s = Math.floor((distance % (1000 * 60)) / 1000);
+    
+    document.getElementById("adminTimer").innerText = 
+      `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  }, 1000);
+}
 
 window.updateAdminTimerUI = function() {
-  const h = Math.floor(adminTimeRemaining / 3600).toString().padStart(2, '0');
-  const m = Math.floor((adminTimeRemaining % 3600) / 60).toString().padStart(2, '0');
-  const s = (adminTimeRemaining % 60).toString().padStart(2, '0');
-  const el = document.getElementById("adminTimer");
-  if(el) el.innerText = `${h}:${m}:${s}`;
+  // Handled by startGlobalCountdown
 }
 
 window.startAdminTimer = function() {
-  if(adminTimerInterval) return;
-  adminTimerInterval = setInterval(() => {
-    if(adminTimeRemaining > 0) {
-      adminTimeRemaining--;
-      updateAdminTimerUI();
-    } else {
-      clearInterval(adminTimerInterval);
-    }
-  }, 1000);
+  alert("The timer is now automatically synced with the Set Quiz Time!");
 }
 
 window.resetAdminTimer = function() {
   clearInterval(adminTimerInterval);
   adminTimerInterval = null;
-  adminTimeRemaining = 7200;
-  updateAdminTimerUI();
+  document.getElementById("adminTimer").innerText = "00:00:00";
 }
 
 /* SOUND BOARD LOGIC */
-let soundboardSlots = {}; // Store all sound objects
+let soundboardSlots = {
+  'cheer': new Audio("https://actions.google.com/sounds/v1/crowds/battle_crowd_celebrate_stutter.ogg"),
+  'clap': new Audio("https://actions.google.com/sounds/v1/crowds/human_applause.ogg"),
+  'tension': new Audio("https://actions.google.com/sounds/v1/foley/clock_ticking.ogg")
+}; // Store all sound objects
 let currentPlayingAudio = null; // Track current audio to allow stopping
 
 // Helper to play sound and track it

@@ -301,13 +301,13 @@ startTimer();
 
 function startTimer(){ // Use QUESTION_TIME_LIMIT here
 
-time=15;
+time = QUESTION_TIME_LIMIT;
 
 let bar=document.getElementById("timer-bar");
 
 bar.style.width="100%";
 
-document.getElementById("timer").innerText="Time: "+time;
+document.getElementById("timer").innerText="Time: " + time;
 
 clearInterval(timer);
 

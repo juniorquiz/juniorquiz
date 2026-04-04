@@ -1140,6 +1140,24 @@ function playAudioFile(audioObj) {
     alert("Error playing sound: " + e.message + "\nCheck internet or URL.");
   });
 }
+  // Admin Authentication Logic
+window.checkAdminPass = async function() {
+    const password = document.getElementById("adminPassInput").value;
+    const adminEmail = "multanivicky508@gmail.com"; // Matches your Firebase console
+
+    try {
+        const auth = getAuth();
+        await signInWithEmailAndPassword(auth, adminEmail, password);
+        
+        // Hide login and show dashboard on success
+        document.getElementById("loginOverlay").style.display = "none";
+        document.querySelector(".dashboard").style.display = "flex";
+        alert("Login Successful!");
+    } catch (error) {
+        console.error("Login failed:", error);
+        alert("Incorrect Password. Please try again.");
+    }
+};
 
 window.stopAllSounds = function() {
   if (currentPlayingAudio) {

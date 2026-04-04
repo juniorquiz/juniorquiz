@@ -545,6 +545,7 @@ border-collapse:collapse;
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
 import { getFirestore, collection, onSnapshot, query, orderBy, limit, doc, updateDoc, getDocs, deleteDoc, setDoc, addDoc, getDoc, where, writeBatch, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -582,10 +583,8 @@ onSnapshot(doc(db, "settings", "quiz"), (docSnap) => {
         const ctrlTime = document.getElementById("controlTimeDisplay");
         if (data.startTime) {
             if(ctrlTime) ctrlTime.innerText = "Set Time: " + data.startTime;
-            startGlobalCountdown(data.startTime);
         } else {
             if(ctrlTime) ctrlTime.innerText = "Set Time: Not Set";
-            resetAdminTimer();
         }
     } else {
         maxParticipantLimit = 100; // Fallback to default
@@ -1079,53 +1078,54 @@ document.getElementById("deleteSelectedBtn").addEventListener("click", async () 
 
 /* LOCAL ADMIN TIMER (2 HOURS) */
 let adminTimerInterval = null;
-
-window.startGlobalCountdown = function(startTimeStr) {
-  if(adminTimerInterval) clearInterval(adminTimerInterval);
-  
-  let isoTime = startTimeStr.replace(" ", "T");
-  if (!isoTime.includes("+") && !isoTime.endsWith("Z")) isoTime += "+05:30";
-  const targetDate = new Date(isoTime).getTime();
-
-  adminTimerInterval = setInterval(() => {
-    const now = new Date().getTime();
-    const distance = targetDate - now;
-
-    if (distance <= 0) {
-      clearInterval(adminTimerInterval);
-      document.getElementById("adminTimer").innerText = "00:00:00";
-      return;
-    }
-
-    const h = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    const m = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-    const s = Math.floor((distance % (1000 * 60)) / 1000);
-    
-    document.getElementById("adminTimer").innerText = 
-      `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-  }, 1000);
-}
+let adminTimeRemaining = 7200; // 2 hours in seconds
 
 window.updateAdminTimerUI = function() {
-  // Handled by startGlobalCountdown
+  const h = Math.floor(adminTimeRemaining / 3600).toString().padStart(2, '0');
+  const m = Math.floor((adminTimeRemaining % 3600) / 60).toString().padStart(2, '0');
+  const s = (adminTimeRemaining % 60).toString().padStart(2, '0');
+  const el = document.getElementById("adminTimer");
+  if(el) el.innerText = `${h}:${m}:${s}`;
 }
 
 window.startAdminTimer = function() {
-  alert("The timer is now automatically synced with the Set Quiz Time!");
+  if(adminTimerInterval) return;
+  adminTimerInterval = setInterval(() => {
+    if(adminTimeRemaining > 0) {
+      adminTimeRemaining--;
+      updateAdminTimerUI();
+    } else {
+      clearInterval(adminTimerInterval);
+      adminTimerInterval = null;
+    }
+  }, 1000);
 }
 
 window.resetAdminTimer = function() {
   clearInterval(adminTimerInterval);
   adminTimerInterval = null;
-  document.getElementById("adminTimer").innerText = "00:00:00";
+  adminTimeRemaining = 7200;
+  updateAdminTimerUI();
 }
 
 /* SOUND BOARD LOGIC */
+function createAudioWithFallback(localPath, fallbackUrl) {
+  const audio = new Audio(localPath);
+  audio.onerror = () => {
+    console.warn(`Local file ${localPath} not found, using fallback URL.`);
+    audio.src = fallbackUrl;
+  };
+  return audio;
+}
+
 let soundboardSlots = {
-  'cheer': new Audio("https://actions.google.com/sounds/v1/crowds/battle_crowd_celebrate_stutter.ogg"),
-  'clap': new Audio("https://actions.google.com/sounds/v1/crowds/human_applause.ogg"),
-  'tension': new Audio("https://actions.google.com/sounds/v1/foley/clock_ticking.ogg")
-}; // Store all sound objects
+  'cheer': createAudioWithFallback("cheering.mp3", "https://actions.google.com/sounds/v1/crowds/battle_crowd_celebrate_stutter.ogg"),
+  'clap': createAudioWithFallback("clapping.mp3", "https://actions.google.com/sounds/v1/crowds/human_applause.ogg"),
+  'tension': createAudioWithFallback("tension.mp3", "https://actions.google.com/sounds/v1/foley/clock_ticking.ogg"),
+  'Custom 1': new Audio("custom1.mp3"),
+  'Custom 2': new Audio("custom2.mp3")
+}; 
+
 let currentPlayingAudio = null; // Track current audio to allow stopping
 
 // Helper to play sound and track it
@@ -1345,6 +1345,11 @@ window.toggleYTSession = function(start) {
     if (start) {
         startBtn.style.display = 'none';
         stopBtn.style.display = 'inline-block';
+
+        // Unlock audio for browser (Play and immediately pause)
+        ytTikSound.play().then(() => { ytTikSound.pause(); ytTikSound.currentTime = 0; }).catch(() => {});
+        ytBuzzerSound.play().then(() => { ytBuzzerSound.pause(); ytBuzzerSound.currentTime = 0; }).catch(() => {});
+
         nextLiveQ();
     } else {
         startBtn.style.display = 'inline-block';
@@ -1430,8 +1435,8 @@ window.nextLiveQ = function(){
         t--;
         timerEl.innerText = t;
 
-        // Manual Ticking: Play distinct click every second between 9 and 4
-        if(t <= 9 && t > 3 && !window.speechSynthesis.speaking) {
+        // Manual Ticking: Play distinct click every second between 9 and 4 (Priority over speech)
+        if(t <= 9 && t > 3) {
              ytTikSound.currentTime = 0;
              ytTikSound.volume = 1.0; 
              ytTikSound.play().catch(e => {});
@@ -1472,15 +1477,6 @@ window.nextLiveQ = function(){
 </div>
 
 <script>
-window.checkAdminPass = function() {
-    const p = document.getElementById("adminPassInput").value;
-    if(p === "Waheguru@756") {
-        document.getElementById("loginOverlay").style.display = "none";
-        document.querySelector('.dashboard').style.display = 'flex';
-    } else {
-        alert("Incorrect Password");
-    }
-}
 // Add listener for 'Enter' key on the password input
 document.getElementById("adminPassInput").addEventListener("keypress", function(e) {
     if (e.key === "Enter") {

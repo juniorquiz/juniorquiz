@@ -1,0 +1,13 @@
+{
+  "name": "junior-quiz",
+  "version": "1.0.0",
+  "description": "Junior Quiz Live Platform",
+  "main": "index.html",
+  "scripts": {
+    "build": "echo 'No build step required'",
+    "start": "npx serve ."
+  },
+  "engines": {
+    "node": "18"
+  }
+}

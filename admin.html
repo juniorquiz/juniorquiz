@@ -558,7 +558,33 @@ appId: "1:1027701484784:web:8e5075d60d042c47d0a635"
 };
 
 const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
 const db = getFirestore(app);
+
+const ADMIN_EMAIL = "multanivicky508@gmail.com";
+const ADMIN_UID = "LXBzNi0VBSMOGGvSeQial2ICMKY2";
+
+// 🔹 Define login function and make it global
+window.checkAdminPass = async function() {
+    const pass = document.getElementById("adminPassInput").value;
+    if(!pass) return alert("Please enter your password.");
+
+    try {
+        await signInWithEmailAndPassword(auth, ADMIN_EMAIL, pass);
+        // Dashboard visibility is handled by onAuthStateChanged below
+    } catch (error) {
+        console.error("Login failed:", error);
+        alert("Incorrect Password or Connection Error");
+    }
+};
+
+// 🔹 Persistent Login Check: Automatically shows dashboard if already logged in
+onAuthStateChanged(auth, (user) => {
+    if (user && user.uid === ADMIN_UID) {
+        document.getElementById("loginOverlay").style.display = "none";
+        document.querySelector(".dashboard").style.display = "flex";
+    }
+});
 
 // Global state for counter
 let livePlayerCount = 0;
@@ -1109,23 +1135,11 @@ window.resetAdminTimer = function() {
 }
 
 /* SOUND BOARD LOGIC */
-function createAudioWithFallback(localPath, fallbackUrl) {
-  const audio = new Audio(localPath);
-  audio.onerror = () => {
-    console.warn(`Local file ${localPath} not found, using fallback URL.`);
-    audio.src = fallbackUrl;
-  };
-  return audio;
-}
-
 let soundboardSlots = {
-  'cheer': createAudioWithFallback("cheering.mp3", "https://actions.google.com/sounds/v1/crowds/battle_crowd_celebrate_stutter.ogg"),
-  'clap': createAudioWithFallback("clapping.mp3", "https://actions.google.com/sounds/v1/crowds/human_applause.ogg"),
-  'tension': createAudioWithFallback("tension.mp3", "https://actions.google.com/sounds/v1/foley/clock_ticking.ogg"),
-  'Custom 1': new Audio("custom1.mp3"),
-  'Custom 2': new Audio("custom2.mp3")
-}; 
-
+  'cheer': new Audio("https://actions.google.com/sounds/v1/crowds/battle_crowd_celebrate_stutter.ogg"),
+  'clap': new Audio("https://actions.google.com/sounds/v1/crowds/human_applause.ogg"),
+  'tension': new Audio("https://actions.google.com/sounds/v1/foley/clock_ticking.ogg")
+}; // Store all sound objects
 let currentPlayingAudio = null; // Track current audio to allow stopping
 
 // Helper to play sound and track it
@@ -1363,11 +1377,6 @@ window.toggleYTSession = function(start) {
     if (start) {
         startBtn.style.display = 'none';
         stopBtn.style.display = 'inline-block';
-
-        // Unlock audio for browser (Play and immediately pause)
-        ytTikSound.play().then(() => { ytTikSound.pause(); ytTikSound.currentTime = 0; }).catch(() => {});
-        ytBuzzerSound.play().then(() => { ytBuzzerSound.pause(); ytBuzzerSound.currentTime = 0; }).catch(() => {});
-
         nextLiveQ();
     } else {
         startBtn.style.display = 'inline-block';
@@ -1453,8 +1462,8 @@ window.nextLiveQ = function(){
         t--;
         timerEl.innerText = t;
 
-        // Manual Ticking: Play distinct click every second between 9 and 4 (Priority over speech)
-        if(t <= 9 && t > 3) {
+        // Manual Ticking: Play distinct click every second between 9 and 4
+        if(t <= 9 && t > 3 && !window.speechSynthesis.speaking) {
              ytTikSound.currentTime = 0;
              ytTikSound.volume = 1.0; 
              ytTikSound.play().catch(e => {});
@@ -1495,6 +1504,15 @@ window.nextLiveQ = function(){
 </div>
 
 <script>
+window.checkAdminPass = function() {
+    const p = document.getElementById("adminPassInput").value;
+    if(p === "Waheguru@756") {
+        document.getElementById("loginOverlay").style.display = "none";
+        document.querySelector('.dashboard').style.display = 'flex';
+    } else {
+        alert("Incorrect Password");
+    }
+}
 // Add listener for 'Enter' key on the password input
 document.getElementById("adminPassInput").addEventListener("keypress", function(e) {
     if (e.key === "Enter") {

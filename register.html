@@ -163,12 +163,12 @@
   <!-- This will show real remaining count like: Remaining participants: 87/100 -->
   <div class="remaining" id="remainingSlots">Loading remaining spots...</div>
 
-  <input type="text"     id="name"          placeholder="Full Name" required>
-  <input type="email"    id="email"         placeholder="Email" required>
+  <input type="text"     id="name"          placeholder="Full Name" required autocomplete="name">
+  <input type="email"    id="email"         placeholder="Email" required autocomplete="email">
   <input type="number"   id="age"           placeholder="Age (5-17)" min="5" max="17" required>
 
   <div class="password-container">
-    <input type="password" id="password"      placeholder="Password (min 8 chars)" required>
+    <input type="password" id="password"      placeholder="Password (min 8 chars)" required autocomplete="new-password">
     <span class="toggle-password" id="togglePassword">👁️</span>
   </div>
 
@@ -190,18 +190,10 @@
 
 <!-- Firebase v12 Modular SDK – MUST have type="module" -->
 <script type="module">
+  import { firebaseConfig } from "./firebase-config.js";
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
   import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, deleteUser } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
   import { getFirestore, doc, setDoc, collection, onSnapshot, query, getDoc, getCountFromServer } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyC8LBv9zIEhGgFS-6rVaUelg1RzkQrJI4M",
-    authDomain: "junior-quiz-abef8.firebaseapp.com",
-    projectId: "junior-quiz-abef8",
-    storageBucket: "junior-quiz-abef8.firebasestorage.app",
-    messagingSenderId: "1027701484784",
-    appId: "1:1027701484784:web:8e5075d60d042c47d0a635"
-  };
 
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);

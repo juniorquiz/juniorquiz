@@ -142,19 +142,10 @@ document.body.style.userSelect="none";
 </script>
 
 <script type="module">
-
+import { firebaseConfig } from "./firebase-config.js";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
 import { getFirestore, doc, getDoc, setDoc, updateDoc, serverTimestamp, collection, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
-
-const firebaseConfig = {
-apiKey: "AIzaSyC8LBv9zIEhGgFS-6rVaUelg1RzkQrJI4M",
-authDomain: "junior-quiz-abef8.firebaseapp.com",
-projectId: "junior-quiz-abef8",
-storageBucket: "junior-quiz-abef8.firebasestorage.app",
-messagingSenderId: "1027701484784",
-appId: "1:1027701484784:web:8e5075d60d042c47d0a635"
-};
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
@@ -167,10 +158,20 @@ onAuthStateChanged(auth, async (userAuth) => {
   } else {
     // Double check DB status
     const docSnap = await getDoc(doc(db, "participants", userAuth.uid));
-    if(!docSnap.exists() || docSnap.data().quizFinished === true){
+    if(!docSnap || !docSnap.exists()){
+       window.location.href = "index.html";
+       return;
+    }
+    if(docSnap.data().quizFinished === true){
        alert("You have already completed the quiz or are invalid.");
        window.location.href = "index.html";
+       return;
     }
+    // Sync local storage in case it was cleared
+    uid = userAuth.uid;
+    name = docSnap.data().name;
+    // Start the quiz only AFTER auth and data are verified
+    loadQuestions();
   }
 });
 
@@ -419,10 +420,6 @@ document.getElementById("result").innerHTML=
     document.getElementById("result").innerHTML += "<p style='color:red;'>Error saving your results. Please contact support.</p>";
   }
 }
-
-/* START QUIZ */
-
-loadQuestions();
 
 </script>
 

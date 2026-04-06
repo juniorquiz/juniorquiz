@@ -170,18 +170,10 @@ button:disabled {
 </a>
 
 <script type="module">
+import { firebaseConfig } from "./firebase-config.js";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, sendPasswordResetEmail, deleteUser } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
 import { getFirestore, doc, getDoc, setDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyC8LBv9zIEhGgFS-6rVaUelg1RzkQrJI4M",
-  authDomain: "junior-quiz-abef8.firebaseapp.com",
-  projectId: "junior-quiz-abef8",
-  storageBucket: "junior-quiz-abef8.firebasestorage.app",
-  messagingSenderId: "1027701484784",
-  appId: "1:1027701484784:web:8e5075d60d042c47d0a635"
-};
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);

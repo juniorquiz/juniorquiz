@@ -8,12 +8,11 @@
 <style>
 
 body{
-display: none; /* 🔹 Hide UI initially to prevent unauthorized flash */
+display: none; /* 🔹 Hidden initially; shown via JS after Auth check */
 margin:0;
 font-family:Arial, sans-serif;
 background:url("background.jpg") no-repeat center center fixed;
 background-size:cover;
-display:flex;
 justify-content:center;
 align-items:center;
 height:100vh;
@@ -235,18 +234,10 @@ cursor:pointer;
 </div>
 
 <script type="module">
+import { firebaseConfig } from "./firebase-config.js";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
 import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
 import { getFirestore, doc, getDoc, onSnapshot, collection, query, orderBy, limit, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyC8LBv9zIEhGgFS-6rVaUelg1RzkQrJI4M",
-  authDomain: "junior-quiz-abef8.firebaseapp.com",
-  projectId: "junior-quiz-abef8",
-  storageBucket: "junior-quiz-abef8.firebasestorage.app",
-  messagingSenderId: "1027701484784",
-  appId: "1:1027701484784:web:8e5075d60d042c47d0a635"
-};
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
@@ -273,8 +264,8 @@ onAuthStateChanged(auth, async (user) => {
       signOut(auth).then(() => window.location.href = "index.html");
       return;
     }
-    // 2. Show UI only after verification
-    document.body.style.display = "flex";
+    // 2. Show UI only after verification and set display to flex
+    document.body.style.setProperty("display", "flex", "important");
   }
 });
 

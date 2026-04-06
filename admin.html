@@ -545,8 +545,7 @@ border-collapse:collapse;
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
-import { getAuth, onAuthStateChanged, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
-import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
+import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js"; // Keep getAuth and signOut for potential future use or other parts of the app
 import { getFirestore, collection, onSnapshot, query, orderBy, limit, doc, updateDoc, getDocs, deleteDoc, setDoc, addDoc, getDoc, where, writeBatch, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -562,32 +561,26 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-const ADMIN_EMAIL = "multanivicky508@gmail.com";
-const ADMIN_UID = "LXBzNi0VBSMOGGvSeQial2ICMKY2";
+// 🔹 Helper function for sound fallbacks
+function createAudioWithFallback(localPath, fallbackUrl) {
+  const audio = new Audio(localPath);
+  audio.onerror = () => {
+    console.warn(`Local file ${localPath} not found, using fallback URL.`);
+    audio.src = fallbackUrl;
+  };
+  return audio;
+}
 
-// 🔹 Define login function and make it global
-window.checkAdminPass = async function() {
-    const pass = document.getElementById("adminPassInput").value;
-    if(!pass) return alert("Please enter your password.");
-
-    try {
-        // Clear any existing session (like a participant session) first
-        await signOut(auth);
-        await signInWithEmailAndPassword(auth, ADMIN_EMAIL, pass);
-        // Dashboard visibility is handled by onAuthStateChanged below
-    } catch (error) {
-        console.error("Login failed:", error);
-        alert("Incorrect Password or Connection Error");
-    }
-};
-
-// 🔹 Persistent Login Check: Automatically shows dashboard if already logged in
-onAuthStateChanged(auth, (user) => {
-    if (user && user.uid === ADMIN_UID) {
+// 🔹 HARDCODED LOGIN LOGIC
+window.checkAdminPass = function() {
+    const p = document.getElementById("adminPassInput").value;
+    if(p === "Waheguru@756") {
         document.getElementById("loginOverlay").style.display = "none";
-        document.querySelector(".dashboard").style.display = "flex";
+        document.querySelector('.dashboard').style.display = 'flex';
+    } else {
+        alert("Incorrect Password");
     }
-});
+}
 
 // Global state for counter
 let livePlayerCount = 0;
@@ -1139,9 +1132,11 @@ window.resetAdminTimer = function() {
 
 /* SOUND BOARD LOGIC */
 let soundboardSlots = {
-  'cheer': new Audio("https://actions.google.com/sounds/v1/crowds/battle_crowd_celebrate_stutter.ogg"),
-  'clap': new Audio("https://actions.google.com/sounds/v1/crowds/human_applause.ogg"),
-  'tension': new Audio("https://actions.google.com/sounds/v1/foley/clock_ticking.ogg")
+  'cheer': createAudioWithFallback("cheering.mp3", "https://actions.google.com/sounds/v1/crowds/battle_crowd_celebrate_stutter.ogg"),
+  'clap': createAudioWithFallback("clapping.mp3", "https://actions.google.com/sounds/v1/crowds/human_applause.ogg"),
+  'tension': createAudioWithFallback("tension.mp3", "https://actions.google.com/sounds/v1/foley/clock_ticking.ogg"),
+  'Custom 1': createAudioWithFallback("custom1.mp3", "https://actions.google.com/sounds/v1/cartoon/pop.ogg"),
+  'Custom 2': createAudioWithFallback("custom2.mp3", "https://actions.google.com/sounds/v1/cartoon/clank_car_crash.ogg")
 }; // Store all sound objects
 let currentPlayingAudio = null; // Track current audio to allow stopping
 
@@ -1157,24 +1152,6 @@ function playAudioFile(audioObj) {
     alert("Error playing sound: " + e.message + "\nCheck internet or URL.");
   });
 }
-  // Admin Authentication Logic
-window.checkAdminPass = async function() {
-    const password = document.getElementById("adminPassInput").value;
-    const adminEmail = "multanivicky508@gmail.com"; // Matches your Firebase console
-
-    try {
-        const auth = getAuth();
-        await signInWithEmailAndPassword(auth, adminEmail, password);
-        
-        // Hide login and show dashboard on success
-        document.getElementById("loginOverlay").style.display = "none";
-        document.querySelector(".dashboard").style.display = "flex";
-        alert("Login Successful!");
-    } catch (error) {
-        console.error("Login failed:", error);
-        alert("Incorrect Password. Please try again.");
-    }
-};
 
 window.stopAllSounds = function() {
   if (currentPlayingAudio) {
@@ -1184,35 +1161,17 @@ window.stopAllSounds = function() {
   }
 }
 
-function setAndPlaySound(soundId, promptMessage) {
-  const url = prompt(promptMessage + "\n(Please use a direct .mp3 link for best compatibility)");
-  if (url) {
-    const newAudio = new Audio(url);
-    soundboardSlots[soundId] = newAudio;
-    alert(`Sound for "${soundId}" has been set.`);
-    playAudioFile(newAudio);
-  }
-}
-
 window.playCustomSound = function(num) {
   const soundId = 'Custom ' + num;
   const audio = soundboardSlots[soundId];
-  if (audio) {
-    audio.currentTime = 0;
-    playAudioFile(audio);
-  } else {
-    setAndPlaySound(soundId, `Set URL for Custom Sound ${num}`);
-  }
+  audio.currentTime = 0; // Reset to start
+  playAudioFile(audio);
 }
 
 window.playPreset = function(soundName) {
   const audio = soundboardSlots[soundName];
-  if (audio) {
-    audio.currentTime = 0;
-    playAudioFile(audio);
-  } else {
-    setAndPlaySound(soundName, `Set URL for "${soundName}" sound`);
-  }
+  audio.currentTime = 0; // Reset to start
+  playAudioFile(audio);
 }
 
 /* CHAT WIDGET LOGIC */
@@ -1358,7 +1317,7 @@ let ytNextQTimeout = null; // To hold the timeout for the next question
 
 // 🔹 SOUND SETUP: Tries local file first, falls back to online URL if missing
 const ytTikSound = new Audio();
-ytTikSound.src = "ticking.mp3"; // 1. Look for this file in your folder
+ytTikSound.src = "clocktick.mp3"; // 1. Look for this file in your folder
 ytTikSound.onerror = function() {
     // 2. If not found, use this online backup
     this.src = "https://actions.google.com/sounds/v1/foley/switch_light_04.ogg"; 
@@ -1499,11 +1458,13 @@ window.nextLiveQ = function(){
 }
 </script>
 
+<!-- SAFE LOGIN OVERLAY (Replaces prompt to fix Dangerous Site warning) -->
 <div id="loginOverlay" style="position:fixed; top:0; left:0; width:100%; height:100%; background:#020b18; z-index:99999; display:flex; flex-direction:column; justify-content:center; align-items:center;">
   <h2 style="color:#00f2ff; margin-bottom:20px;">Admin Access</h2>
-
   <input type="password" id="adminPassInput" placeholder="Enter Password" style="padding:10px; font-size:16px; border-radius:5px; border:none; margin-bottom:15px; width:200px;">
   <button onclick="window.checkAdminPass()" style="padding:10px 20px; font-size:16px; background:#00f2ff; color:black; border:none; border-radius:5px; cursor:pointer;">Login</button>
 </div>
+
+<script>
 </body>
 </html>

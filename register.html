@@ -31,7 +31,7 @@
       font-size: 18px;
       font-weight: bold;
       margin-bottom: 20px;
-      color: #2e7d32; /* green when many spots left */
+      color: #2e7d32;
     }
 
     input {
@@ -50,7 +50,7 @@
     }
 
     .password-container input {
-      padding-right: 45px; /* space for eye */
+      padding-right: 45px;
     }
 
     .toggle-password {
@@ -103,7 +103,6 @@
       color: #666;
     }
 
-    /* Logo glow */
     .logo-container {
       width: 220px;
       height: 160px;
@@ -130,25 +129,25 @@
       100% { background-position: 200% 50%; }
     }
 
-.whatsapp-float {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    background-color: #25d366;
-    color: white;
-    border-radius: 50%;
-    width: 60px;
-    height: 60px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    box-shadow: 2px 2px 3px #999;
-    z-index: 1000;
-    transition: all 0.3s ease;
-}
-.whatsapp-float:hover {
-    transform: scale(1.1);
-}
+    .whatsapp-float {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background-color: #25d366;
+      color: white;
+      border-radius: 50%;
+      width: 60px;
+      height: 60px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-shadow: 2px 2px 3px #999;
+      z-index: 1000;
+      transition: all 0.3s ease;
+    }
+    .whatsapp-float:hover {
+      transform: scale(1.1);
+    }
 
   </style>
 </head>
@@ -160,7 +159,6 @@
     <img src="logo.png" alt="Junior Quiz Live" class="logo-image">
   </div>
 
-  <!-- This will show real remaining count like: Remaining participants: 87/100 -->
   <div class="remaining" id="remainingSlots">Loading remaining spots...</div>
 
   <input type="text"     id="name"          placeholder="Full Name" required autocomplete="name">
@@ -182,18 +180,15 @@
 
   <div id="message"></div>
 
-  <!-- Debug line: If you see this text, JavaScript is running -->
-  <div class="debug-info" id="debug">please check your spam email box for verification email
-  </div>
+  <div class="debug-info" id="debug">Please check your spam email box for verification email</div>
 
 </div>
 
-<!-- Firebase v12 Modular SDK – MUST have type="module" -->
 <script type="module">
   import { firebaseConfig } from "./firebase-config.js";
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
   import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, deleteUser } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
-  import { getFirestore, doc, setDoc, collection, onSnapshot, query, getDoc, getCountFromServer } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+  import { getFirestore, doc, setDoc, collection, onSnapshot, query, getDoc, getCountFromServer, deleteDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
 
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
@@ -206,19 +201,18 @@
   let unsubscribe = null;
   let settingsUnsubscribe = null;
   
-  // Define these GLOBALLY so registerBtn can see them
   let MAX_PARTICIPANTS = 100; 
   let currentCount = 0;
 
   const updateUI = () => {
     const remaining = MAX_PARTICIPANTS - currentCount;
     if (remaining > 0) {
-      remainingElem.textContent = `Remaining participants: ${remaining}/ ${MAX_PARTICIPANTS}`;
+      remainingElem.textContent = `Remaining participants: ${remaining}/${MAX_PARTICIPANTS}`;
       remainingElem.style.color = remaining <= 10 ? "#e65100" : "#2e7d32";
       registerBtn.disabled = false;
       registerBtn.textContent = "Register";
     } else {
-      remainingElem.textContent = `Registration full (${MAX_PARTICIPANTS}/ ${MAX_PARTICIPANTS})`;
+      remainingElem.textContent = `Registration full (${MAX_PARTICIPANTS}/${MAX_PARTICIPANTS})`;
       remainingElem.style.color = "#d32f2f";
       registerBtn.disabled = true;
       registerBtn.textContent = "Registration Full";
@@ -227,10 +221,11 @@
 
   // Real-time count listener
   async function startCountListener() {
-    // 1. Listen to Settings (Limit)
+    // 1. Listen to Settings (Limit) from Admin Panel
     settingsUnsubscribe = onSnapshot(doc(db, "settings", "quiz"), (snap) => {
       if (snap.exists() && snap.data().participantLimit) {
         MAX_PARTICIPANTS = snap.data().participantLimit;
+        console.log("✅ Participant limit updated to:", MAX_PARTICIPANTS);
         updateUI();
       }
     });
@@ -241,6 +236,7 @@
 
     unsubscribe = onSnapshot(q, (snapshot) => {
       currentCount = snapshot.size;
+      console.log("✅ Current participant count:", currentCount);
       updateUI();
     }, (err) => {
       console.error("Count error:", err);
@@ -269,7 +265,7 @@
     if (e.key === 'Enter') registerBtn.click();
   });
 
-  // Register handler (same as before)
+  // Register handler
   registerBtn.addEventListener("click", async () => {
     const btn = registerBtn;
     const msg = document.getElementById("message");
@@ -305,7 +301,7 @@
     btn.textContent = "Checking availability...";
 
     try {
-      // 1. FINAL CHECK: Ensure we haven't exceeded the limit right now
+      // 1. FINAL CHECK: Ensure we haven't exceeded the limit
       const settingsDoc = await getDoc(doc(db, "settings", "quiz"));
       let currentLimit = 100;
       if (settingsDoc.exists() && settingsDoc.data().participantLimit) {
@@ -317,7 +313,7 @@
         throw new Error("Registration is full. Please try again next time.");
       }
 
-      btn.textContent = "Creating...";
+      btn.textContent = "Creating account...";
 
       const userCred = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCred.user;
@@ -333,7 +329,6 @@
         });
         await sendEmailVerification(user);
       } catch (dbError) {
-        // Rollback: If DB write fails, delete the auth user so email isn't stuck
         await deleteUser(user);
         console.error("Rollback performed due to:", dbError);
         throw new Error("Registration failed during save. Please try again.");
@@ -341,35 +336,46 @@
 
       msg.className = "success";
       msg.textContent = "Success! Check email to verify.";
-      // form clear
       document.querySelectorAll('input').forEach(i => i.value = '');
     } catch (e) {
       if (e.message.includes("email-already-in-use")) {
-        // Auto-fix: Try to sign in and check if it's a broken "zombie" account
+        console.log("📧 Email already in use. Attempting to auto-clean old account...");
+        
         try {
-           // Try to login with the password they just entered
-           const userCred = await signInWithEmailAndPassword(auth, email, password);
-           const oldUser = userCred.user;
-           const docSnap = await getDoc(doc(db, PARTICIPANTS_COLLECTION, oldUser.uid));
-           
-           // If login works but no profile data exists -> Delete the zombie account
-           if (!docSnap.exists()) {
-             await deleteUser(oldUser);
-             msg.className = "success";
-             msg.textContent = "Previous data cleared. Click Register again!";
-             return;
-           }
-        } catch (loginErr) {
-           // If password doesn't match the old account, we can't fix it auto-magically
+          // 🔴 STEP 1: Try to login with provided password to verify ownership
+          const userCred = await signInWithEmailAndPassword(auth, email, password);
+          const oldUser = userCred.user;
+          const oldUid = oldUser.uid;
+          
+          console.log("✅ Old account found with same password. UID:", oldUid);
+          
+          // 🔴 STEP 2: Delete old participant record from Firestore
+          const docRef = doc(db, PARTICIPANTS_COLLECTION, oldUid);
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+            await deleteDoc(docRef);
+            console.log("✅ Old participant record deleted from Firestore");
+          }
+          
+          // 🔴 STEP 3: Delete old auth user
+          await deleteUser(oldUser);
+          console.log("✅ Old auth account deleted");
+          
+          msg.className = "success";
+          msg.textContent = "Old account removed. Click Register to create new one!";
+          
+        } catch (cleanupErr) {
+          console.error("❌ Auto-cleanup failed:", cleanupErr.message);
+          
+          // If password doesn't match, can't auto-delete
+          msg.className = "error";
+          msg.textContent = "Email already registered. Please Login with existing password or contact support.";
         }
-        msg.className = "error";
-        msg.textContent = "Email taken. Please Login.";
       } else {
         msg.className = "error";
         msg.textContent = e.message;
       }
     } finally {
-      // Release the lock and let updateUI decide if button should be enabled based on limit
       btn.disabled = false;
       updateUI();
     }

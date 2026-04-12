@@ -1,11 +1,8 @@
-// Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
+import { getAuth } from "firebase/auth"; // Added for Login/Register
+import { getFirestore } from "firebase/firestore"; // Added for Database
 
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
   apiKey: "AIzaSyAdP2Ifheihh-MW9HXzWKpw0nEqQ_6sarA",
   authDomain: "juniorquizlive.firebaseapp.com",
@@ -20,3 +17,7 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
+
+// Export these so your Register page can use them
+export const auth = getAuth(app);
+export const db = getFirestore(app);

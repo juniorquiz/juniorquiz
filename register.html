@@ -186,9 +186,9 @@
 
 <script type="module">
   import { firebaseConfig } from "./firebase-config.js";
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
-  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, deleteUser } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
-  import { getFirestore, doc, setDoc, collection, onSnapshot, query, getDoc, getCountFromServer, deleteDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, deleteUser } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+  import { getFirestore, doc, setDoc, collection, onSnapshot, query, getDoc, getCountFromServer, deleteDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
@@ -210,12 +210,16 @@
       remainingElem.textContent = `Remaining participants: ${remaining}/${MAX_PARTICIPANTS}`;
       remainingElem.style.color = remaining <= 10 ? "#e65100" : "#2e7d32";
       registerBtn.disabled = false;
-      registerBtn.textContent = "Register";
+      if (registerBtn.textContent === "Registration Full") {
+        registerBtn.textContent = "Register";
+      }
     } else {
       remainingElem.textContent = `Registration full (${MAX_PARTICIPANTS}/${MAX_PARTICIPANTS})`;
       remainingElem.style.color = "#d32f2f";
       registerBtn.disabled = true;
-      registerBtn.textContent = "Registration Full";
+      if (registerBtn.textContent !== "Registration Full") {
+        registerBtn.textContent = "Registration Full";
+      }
     }
   };
 
@@ -239,9 +243,9 @@
       console.log("✅ Current participant count:", currentCount);
       updateUI();
     }, (err) => {
-      console.error("Count error:", err);
-      remainingElem.textContent = "Error loading count – check console";
-      remainingElem.style.color = "red";
+      console.warn("Firestore connection issue:", err);
+      remainingElem.textContent = "Connecting to server...";
+      remainingElem.style.color = "orange";
     });
   }
 
@@ -267,6 +271,7 @@
 
   // Register handler
   registerBtn.addEventListener("click", async () => {
+    console.log("Register button clicked.");
     const btn = registerBtn;
     const msg = document.getElementById("message");
 
@@ -301,20 +306,15 @@
     btn.textContent = "Checking availability...";
 
     try {
-      // 1. FINAL CHECK: Ensure we haven't exceeded the limit
-      const settingsDoc = await getDoc(doc(db, "settings", "quiz"));
-      let currentLimit = 100;
-      if (settingsDoc.exists() && settingsDoc.data().participantLimit) {
-          currentLimit = settingsDoc.data().participantLimit;
+      btn.textContent = "Verifying...";
+      
+      // Check limit before creating account
+      const countSnap = await getCountFromServer(collection(db, PARTICIPANTS_COLLECTION)).catch(() => null);
+      if (countSnap && countSnap.data().count >= MAX_PARTICIPANTS) {
+        throw new Error("Sorry, registration just filled up.");
       }
 
-      const countSnap = await getCountFromServer(collection(db, PARTICIPANTS_COLLECTION));
-      if (countSnap.data().count >= currentLimit) {
-        throw new Error("Registration is full. Please try again next time.");
-      }
-
-      btn.textContent = "Creating account...";
-
+      btn.textContent = "Creating...";
       const userCred = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCred.user;
       
@@ -329,9 +329,12 @@
         });
         await sendEmailVerification(user);
       } catch (dbError) {
+        console.error("Firestore setDoc failed, attempting to delete Auth user:", dbError);
+        // Rollback: If DB write fails, delete the auth user so email isn't stuck
         await deleteUser(user);
         console.error("Rollback performed due to:", dbError);
         throw new Error("Registration failed during save. Please try again.");
+
       }
 
       msg.className = "success";
@@ -339,45 +342,45 @@
       document.querySelectorAll('input').forEach(i => i.value = '');
     } catch (e) {
       if (e.message.includes("email-already-in-use")) {
-        console.log("📧 Email already in use. Attempting to auto-clean old account...");
-        
+        console.warn("Email already in use, attempting to resolve:", e);
+        // Auto-fix: Try to sign in and check if it's a broken "zombie" account
         try {
-          // 🔴 STEP 1: Try to login with provided password to verify ownership
-          const userCred = await signInWithEmailAndPassword(auth, email, password);
-          const oldUser = userCred.user;
-          const oldUid = oldUser.uid;
-          
-          console.log("✅ Old account found with same password. UID:", oldUid);
-          
-          // 🔴 STEP 2: Delete old participant record from Firestore
-          const docRef = doc(db, PARTICIPANTS_COLLECTION, oldUid);
-          const docSnap = await getDoc(docRef);
-          if (docSnap.exists()) {
-            await deleteDoc(docRef);
-            console.log("✅ Old participant record deleted from Firestore");
-          }
-          
-          // 🔴 STEP 3: Delete old auth user
-          await deleteUser(oldUser);
-          console.log("✅ Old auth account deleted");
-          
-          msg.className = "success";
-          msg.textContent = "Old account removed. Click Register to create new one!";
-          
-        } catch (cleanupErr) {
-          console.error("❌ Auto-cleanup failed:", cleanupErr.message);
-          
-          // If password doesn't match, can't auto-delete
-          msg.className = "error";
-          msg.textContent = "Email already registered. Please Login with existing password or contact support.";
+           // Try to login with the password they just entered
+           const userCred = await signInWithEmailAndPassword(auth, email, password);
+           const oldUser = userCred.user;
+           const docSnap = await getDoc(doc(db, PARTICIPANTS_COLLECTION, oldUser.uid));
+           
+           // If login works but no profile data exists -> Delete the zombie account
+           console.log("User logged in with existing email. Checking profile existence.");
+           if (!docSnap.exists()) {
+             console.log("No Firestore profile found, deleting Auth user.");
+             await deleteUser(oldUser);
+             msg.className = "success";
+             msg.textContent = "Previous data cleared. Click Register again!";
+             return;
+           }
+        } catch (loginErr) {
+           console.warn("Failed to sign in with existing email, likely wrong password:", loginErr);
+           // If password doesn't match the old account, we can't fix it auto-magically
         }
+        msg.className = "error";
+        // This message is important for the user to understand they should log in instead.
+        msg.textContent = "Email taken. Please Login.";
+      } else if (e.code === 'unavailable' || e.message.includes('network-request-failed') || e.message.includes('offline')) {
+        msg.className = "error";
+        msg.textContent = "You appear to be offline. Please check your internet connection and try again.";
+        btn.disabled = true; // Keep button disabled if truly offline
       } else {
         msg.className = "error";
         msg.textContent = e.message;
       }
     } finally {
-      btn.disabled = false;
-      updateUI();
+      // Release the lock and let updateUI decide if button should be enabled based on limit
+      // Add a small delay to ensure the user sees any status messages
+      setTimeout(() => {
+        btn.disabled = false;
+        updateUI();
+      }, 1000); // 1 second delay
     }
   });
 

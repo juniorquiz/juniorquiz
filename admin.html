@@ -544,18 +544,10 @@ border-collapse:collapse;
 
 <script type="module">
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
-import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js"; // Keep getAuth and signOut for potential future use or other parts of the app
-import { getFirestore, collection, onSnapshot, query, orderBy, limit, doc, updateDoc, getDocs, deleteDoc, setDoc, addDoc, getDoc, where, writeBatch, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
-
-const firebaseConfig = {
-apiKey: "AIzaSyC8LBv9zIEhGgFS-6rVaUelg1RzkQrJI4M",
-authDomain: "junior-quiz-abef8.firebaseapp.com",
-projectId: "junior-quiz-abef8",
-storageBucket: "junior-quiz-abef8.firebasestorage.app",
-messagingSenderId: "1027701484784",
-appId: "1:1027701484784:web:8e5075d60d042c47d0a635"
-};
+import { firebaseConfig } from "./firebase-config.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+import { getFirestore, collection, onSnapshot, query, orderBy, limit, doc, updateDoc, getDocs, deleteDoc, setDoc, addDoc, getDoc, where, writeBatch, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
